@@ -16,6 +16,11 @@
 library(data.table)
 library(tidyverse)
 
+library(ggmap)
+library(dplyr)
+library(ggplot2)
+
+
 # Clear workspace
 rm(list=ls())
 graphics.off()
@@ -73,9 +78,9 @@ parking = parking_orig[c(1:1000)]
 
 # Omitt Columns
 # Check whether columns are necessary/empty
-unique(parking$PaidParkingRate)
-unique(parking$`2010 Census Tracts`)
-unique(parking$`City Council Districts`)
+unique(parking_orig$PaidParkingRate)
+unique(parking_orig$`2010 Census Tracts`)
+unique(parking_orig$`City Council Districts`)
 # Omitt
 parking = parking[, -c(10, 13, 15)]
 
@@ -110,23 +115,5 @@ weather$time = paste0(weather$Hour, ":", weather$Minute)
 # Sort columns
 weather = select(weather, date, time, everything())
 
-# rm(weather_01, weather_02)
+save.image(file = "df_set_01.RData")
 
-
-# Merge all Datasets ---------------------------------
-
-# Merge "holidays" and "dates" datasets
-df0 = merge(holidays, dates, by="date", all=TRUE)
-# Turn is_holiday into a binary variable
-df0[is.na(df0$is_holiday),"is_holiday"] = 0
-# Remove holiday name column
-df0 = df0[,-2]
-
-# rm(dates, holidays)
-
-# Merge "weather" with temporary dataframe "df0"
-df0 = merge(weather, df0, by="date", all=TRUE)
-
-# rm(dates, holidays)
-
-# Merging the next dataframe will get more difficult. Different times??? help!
