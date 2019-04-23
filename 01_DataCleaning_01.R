@@ -91,5 +91,16 @@ parking_orig = parking_orig[,-3]
 parking_orig$occupancyPercent = parking_orig$PaidOccupancy / parking_orig$ParkingSpaceCount
 parking_orig$freePercent = 1- parking_orig$occupancyPercent
 
+# Fixing negative values (more occupied than available)
+too_high_index = which(parking$occupancyPercent > 1)
+parking$occupancyPercent[too_high_index] = 1 
+parking$freePercent[too_high_index] = 0 
+
+# For the whole dataset
+parking_orig[(parking_orig$occupancyPercent)>1,"occupancyPercent"]=1
+parking_orig[(parking_orig$freePercent)<0,"freePercent"]=0
+
 save.image(file = "../02_Business_Analytics_Data/df_set_01.RData")
 save.image(file = "../Schramm, Cornelius - 02_Business_Analytics_Data/df_set_01.RData")
+
+
