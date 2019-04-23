@@ -1,68 +1,32 @@
 # Description ----------------------------------------
 
 # In this script we will:
-# - organize our data
+# - organize our parking data
 # - select features / omitt columns
-# - merge dataframes
 
 # The aim is to create one dataframe, which is:
 # - easier to handle (less rows, less columns)
 # - free of unnecessary data
-
 
 # Setup ----------------------------------------------
 
 # Load required packages
 library(data.table)
 library(tidyverse)
+library(dplyr)
+library(ggplot2)
+
 
 # Clear workspace
 rm(list=ls())
 graphics.off()
 
-# Load data (find sources __________)
-dates = fread("../02_Business_Analytics_Data/dates.csv")
-dates = fread("../Schramm, Cornelius - 02_Business_Analytics_Data/dates.csv")
-holidays = fread("../02_Business_Analytics_Data/holidays.csv")
-holidays = fread("../Schramm, Cornelius - 02_Business_Analytics_Data/holidays.csv")
+
+# Reading our data into R
 parking_orig = fread("../02_Business_Analytics_Data/Paid_Parking_Occupancy__Last_30_Days_.csv")
+
+# Because of OneDrive we need to load from two different paths
 parking_orig = fread("../Schramm, Cornelius - 02_Business_Analytics_Data/Paid_Parking_Occupancy__Last_30_Days_.csv")
-# 20th to 27th March
-weather_01 = read_csv2("../02_Business_Analytics_Data/history_export_2019-03-27T17_13_57.csv", skip =11)
-weather_01 = read_csv2("../Schramm, Cornelius - 02_Business_Analytics_Data/history_export_2019-03-27T17_13_57.csv", skip =11)
-# 25th March to 8th April
-weather_02 = read_csv2("../02_Business_Analytics_Data/history_export_2019-04-08T16_02_14.csv", skip =11)
-weather_02 = read_csv2("../Schramm, Cornelius - 02_Business_Analytics_Data/history_export_2019-04-08T16_02_14.csv", skip =11)
-# events = fread("../02_Business_Analytics_Data/events.csv")
-# events = fread("../Schramm, Cornelius - 02_Business_Analytics_Data/events.csv")
-
-
-# Clean "dates" Dataset ------------------------------
-
-# Rename columns
-colnames(dates) = c(
-  "date",
-  "day",
-  "is_weekend",
-  "is_fr/sa"
-)
-# Edit date format
-dates$date = as.Date(dates$date, "%d.%m.%y")
-
-
-# Clean "holidays" Dataset ---------------------------
-
-# Omitt empty rows and columns
-holidays = holidays[c(2:13), c(1,2,3)]
-# Rename columns
-colnames(holidays) = c(
-  "date",
-  "holiday_name",
-  "is_holiday"
-)
-# Edit date format
-holidays$date = as.Date(holidays$date, "%d.%m.%y")
-
 
 # Clean "parking" Dataset ----------------------------
 
@@ -73,9 +37,9 @@ parking = parking_orig[c(1:1000)]
 
 # Omitt Columns
 # Check whether columns are necessary/empty
-unique(parking$PaidParkingRate)
-unique(parking$`2010 Census Tracts`)
-unique(parking$`City Council Districts`)
+unique(parking_orig$PaidParkingRate)
+unique(parking_orig$`2010 Census Tracts`)
+unique(parking_orig$`City Council Districts`)
 # Omitt
 parking = parking[, -c(10, 13, 15)]
 
@@ -96,37 +60,47 @@ parking$time = format(strptime(parking$time, "%I:%M:%S %p"), format="%H:%M")
 # Omitt am/pm column
 parking = parking[,-3]
 
+# Create colum with occupancy percentage (/free parking) of a given parking section at any given point in time
+parking$occupancyPercent = parking$PaidOccupancy / parking$ParkingSpaceCount
+parking$freePercent = 1- parking$occupancyPercent
 
-# Clean "weather" Dataset ----------------------------
+# Cleaning "parking_orig" -----------------
+# now that we see that everything works the way we like in the smaller parking data set, we do it for the whole(parking_orig)
+# Omitt
+parking_orig = parking_orig[, -c(10, 13, 15)]
 
-# Merge/stack both weather datasets
-# Not done here because the first one has less columns (?)
+# Clean Location
+# Separate location into latitude and longitude
+parking_orig$Location = gsub("POINT \\(", "", parking_orig$Location)
+parking_orig$Location = gsub("\\)", "", parking_orig$Location)
+parking_orig = separate(parking_orig, Location, into = c("lon", "lat"), sep=" ")
 
-weather = weather_02
-# Create columns "date" and "time" in common format
-weather$date = paste0(weather$Day, ".", weather$Month, ".", weather$Year)
-weather$date = as.Date(weather$date, "%d.%m.%Y")
-weather$time = paste0(weather$Hour, ":", weather$Minute)
-# Sort columns
-weather = select(weather, date, time, everything())
+# Clean Date and Time
+# Separate into date and time
+parking_orig = separate(parking_orig, OccupancyDateTime, into = c("date", "time", "am/pm"), sep=" ")
+# Edit date format
+parking_orig$date = as.Date(parking_orig$date, "%m/%d/%Y")
+# Edit time format
+parking_orig$time = paste0(parking_orig$time, " ", parking_orig$`am/pm`)
+parking_orig$time = format(strptime(parking_orig$time, "%I:%M:%S %p"), format="%H:%M")
+# Omitt am/pm column
+parking_orig = parking_orig[,-3]
 
-# rm(weather_01, weather_02)
+# Create colum with occupancy percentage (/free parking) of a given parking section at any given point in time
+# this will most likely be our Y-hat
+parking_orig$occupancyPercent = parking_orig$PaidOccupancy / parking_orig$ParkingSpaceCount
+parking_orig$freePercent = 1- parking_orig$occupancyPercent
+
+# Fixing negative values (more occupied than available)
+too_high_index = which(parking$occupancyPercent > 1)
+parking$occupancyPercent[too_high_index] = 1 
+parking$freePercent[too_high_index] = 0 
+
+# For the whole dataset
+parking_orig[(parking_orig$occupancyPercent)>1,"occupancyPercent"]=1
+parking_orig[(parking_orig$freePercent)<0,"freePercent"]=0
+
+save.image(file = "../02_Business_Analytics_Data/df_set_01.RData")
+save.image(file = "../Schramm, Cornelius - 02_Business_Analytics_Data/df_set_01.RData")
 
 
-# Merge all Datasets ---------------------------------
-
-# Merge "holidays" and "dates" datasets
-df0 = merge(holidays, dates, by="date", all=TRUE)
-# Turn is_holiday into a binary variable
-df0[is.na(df0$is_holiday),"is_holiday"] = 0
-# Remove holiday name column
-df0 = df0[,-2]
-
-# rm(dates, holidays)
-
-# Merge "weather" with temporary dataframe "df0"
-df0 = merge(weather, df0, by="date", all=TRUE)
-
-# rm(dates, holidays)
-
-# Merging the next dataframe will get more difficult. Different times??? help!
