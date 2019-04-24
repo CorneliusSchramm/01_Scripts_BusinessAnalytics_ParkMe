@@ -19,7 +19,7 @@ graphics.off()
 
 # -------
 
-#
+# Load parking data
 load("../Schramm, Cornelius - 02_Business_Analytics_Data/df_set_01.RData")
 # remove too high too low before saving image
 
@@ -29,10 +29,7 @@ load("../Schramm, Cornelius - 02_Business_Analytics_Data/df_set_01.RData")
 # Because of OneDrive we need to load from two different paths
 # parking_orig = fread("../Schramm, Cornelius - 02_Business_Analytics_Data/Paid_Parking_Occupancy__Last_30_Days_.csv")
 
-
-# Google maps API ----------------
-
-# Register the google api key
+# Register the Google Maps API key
 register_google(key="AIzaSyAfPULmtU7hUcoj4lboRAbzVg-810wrkJs")
 
 
@@ -109,3 +106,4 @@ p1 = create_map("2019-03-15", "12:00")
 p2 = create_map("2019-03-18", "15:00")
 grid.arrange(p1, p2, ncol=2)
 
+save(create_map, file="../Schramm, Cornelius - 02_Business_Analytics_Data/create_map.RData")
