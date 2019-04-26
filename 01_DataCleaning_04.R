@@ -47,56 +47,74 @@ events = separate(events,`Event End Date`, c("End.date", "End.time", "End AM/PM"
 events$End.date = as.Date(events$End.date, "%m/%d/%Y")
 events = separate(events,`Event Start Date`, c("Start.date", "Start.time", "Start AM/PM"), sep=" ")
 events$Start.date = as.Date(events$Start.date, "%m/%d/%Y")
-events = events[, -c(9,10, 12, 13)]
-events = events[, -c(1,5,6,7,14)]
-colnames(events)[4] = "date.x"
+colnames(events)[8] = "date.x"
 
-complete_index = which(events$`Permit Status`== "Complete")
-events = events[complete_index]
+# # Differ between events that have been granted and events that are in process
+# complete_index = which(events$`Permit Status`== "Complete")
+# events = events[complete_index]
 
 # Check wether there are events that last longer than a day
-events_relevant = events[events$date.x >= "2019-03-25" & events$date.x <= "2019-04-22",]
-which((events_relevant$date.x != events_relevant$End.date))
-rm(complete_index, events_relevant)
+events = events[events$date.x >= "2019-03-25" & events$date.x <= "2019-04-22",]
+which((events$date.x != events$End.date))
+
+# Choose relevant columns
+events = events[, c(8, 15, 19)]
+
+# ...
+events = separate_rows(events, `Event Location - Neighborhood`, convert = TRUE, sep=" / ")
+events = separate_rows(events, `Event Location - Neighborhood`, convert = TRUE, sep=";")
 
 # Clean Holiday
-holidays = holidays[-1, -c(3,4) ]
+# holidays = holidays[-1, -c(3,4) ]
 
 # Clean weather data
 weather$date = as.Date(with(weather, paste(Year, Month, Day, Hour, sep="-")), "%Y-%m-%d")
-#Making Merge Column
-weather= transform(weather, MergCol=paste(date, Hour, sep="_"))
+# Making Merge Column
+weather = transform(weather, MergCol = paste(date, Hour, sep="_"))
 
+parking = parking_orig[parking_orig$date>= "2019-03-25" & parking_orig$date <= "2019-04-1",]
 # Clean parking -> make merge Column
 parking$hour = as.numeric(substr(parking$time, start = 1, stop = 2))
 parking = transform(parking, MergCol=paste(date, hour, sep="_"))
 # Same for parking_orig
-memory.limit(70000) ## So we dont get an error due to too big of an vector 
-parking_orig$hour = as.numeric(substr(parking_orig$time, start = 1, stop = 2))
-parking_orig = transform(parking_orig, MergCol=paste(date, hour, sep="_"))
+# memory.limit(70000) ## So we dont get an error due to too big of an vector 
+# parking_orig$hour = as.numeric(substr(parking_orig$time, start = 1, stop = 2))
+# parking_orig = transform(parking_orig, MergCol=paste(date, hour, sep="_"))
 
 
 # Merging --------------------
 
+
+
 # Merging weather and parking----------
-DF_merged_small_v1 = merge(parking,weather, by="MergCol", all.x=TRUE)
+DF_merged_small_v1 = merge(parking, weather, 
+                           by="MergCol", all.x=TRUE)
 # Same for parking_orig
-DF_merged_large_v1 = merge(parking_orig,weather, by="MergCol", all.x=TRUE)
+# DF_merged_large_v1 = merge(parking_orig, weather, 
+#                            by="MergCol", all.x=TRUE)
 
 # Merging DF_merged_small_v1 and events
-DF_merged_small_v2 = merge(DF_merged_small_v1,events, by="date.x", all.x=TRUE)
+DF_merged_small_v2 = merge(DF_merged_small_v1, events, 
+                           by.x=c("date.x","PaidParkingArea"), 
+                           by.y=c("date.x","Event Location - Neighborhood"),
+                           all.y=F, all.x=T)
 # Same for parking_orig
-DF_merged_large_v2 = merge(DF_merged_large_v1,events, by="date.x", all.x=TRUE)
+# DF_merged_large_v2 = merge(DF_merged_large_v1,events, by="date.x", all.x=TRUE)
 
-# Getting Weekday-----
+# Getting Weekday -----
+
 DF_merged_small_v2$Weekday = weekdays(DF_merged_small_v1$date.x)
+DF_merged_small_v2[DF_merged_small_v2$Weekday == "Samstag" | DF_merged_small_v2$Weekday == "Sonntag","is_we"] = 1
+DF_merged_small_v2[is.na(DF_merged_small_v2$is_we),"is_we"] = 0
+
 # Same for parking_orig
-DF_merged_large_v2$Weekday = weekdays(DF_merged_large_v1$date.x)
+# DF_merged_large_v2$Weekday = weekdays(DF_merged_large_v1$date.x)
 
 # Sorting Columns
-DF_final_small = DF_merged_small_v2[,c(7,13,14,46,2,1,3,5,6,8,10,11,12,15:17,26:38,40:45, 18,19)]
-
-DF_final_large = DF_merged_large_v2[,c(7,13,14,46,2,1,3,5,6,8,10,11,12,15:17,26:38,40:45, 18,19)]
+DF_final_small = DF_merged_small_v2[,c(8,13,14,41,1,42,4,9,12,17,26:35,40,10,19)]
+DF_final_small = DF_final_small[DF_final_small$date.x >= "2019-03-25" & DF_final_small$date.x <= "2019-04-22",]
+# DF_final_large = DF_merged_large_v2[,c(8,13,14,41,1,42,4,9,12,17,26:35,40,10,19)]
+# DF_final_large = DF_final_large[DF_final_large$date.x >= "2019-03-25" & DF_final_large$date.x <= "2019-04-22",]
 
 rm(dates, DF_merged_small_v1, DF_merged_small_v2, 
    events, holidays,parking, parking_orig, weather, 
