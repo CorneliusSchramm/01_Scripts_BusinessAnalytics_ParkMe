@@ -122,3 +122,5 @@ rm(dates, DF_merged_small_v1, DF_merged_small_v2,
 
 save.image(file = "../02_Business_Analytics_Data/df_set_02_merged.RData")
 save.image(file = "../Schramm, Cornelius - 02_Business_Analytics_Data/df_set_02_merged.RData")
+
+
