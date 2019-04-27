@@ -23,7 +23,7 @@ graphics.off()
 theme_set(theme_minimal())
 
 # Load the previousely saved version of our parking data as well as new data (weather, events)
-load("../Schramm, Cornelius - 02_Business_Analytics_Data/df_set_02_.RData")
+load("../Schramm, Cornelius - 02_Business_Analytics_Data/df_set_02_merged.RData")
 # dates = fread("../Schramm, Cornelius - 02_Business_Analytics_Data/dates.csv")
 # holidays = fread("../Schramm, Cornelius - 02_Business_Analytics_Data/holidays.csv")
 # weather_01 = read_csv2("../02_Business_Analytics_Data/weather.csv") #(25th March to 22nd April)
@@ -66,7 +66,7 @@ rownames(parking_filtered) = NULL
 # Analysis -----
 
 # Remove unwanted columns
-parking_filtered = parking_filtered[, c(1,6,24)]
+parking_filtered = parking_filtered[, c(1,5,6,24)]
 
 
 # Plot parking density over one day
@@ -85,6 +85,7 @@ example_date2 = "2019-03-30"
 data_plot = parking_filtered %>%
   filter(date.x >= example_date1 & date.x <= example_date2)
 
+#----------MÜLL-------------------
 ggplot(data_plot) +
   geom_line(aes(x=datetime, y=freePercent))
 
@@ -103,8 +104,8 @@ data_train = data_train[,-2]
 data_test = parking_filtered %>%
   filter(date.x >= test_start & date.x <= test_end)
 data_test = data_test[,-2]
-# Forecast model via "forecast" package
 
+# Forecast model via "forecast" package
 ts = ts(data = data_train,
            start = c(2019, 3, 25, 8, 0))
 
