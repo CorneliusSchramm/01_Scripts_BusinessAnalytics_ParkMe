@@ -14,6 +14,8 @@ library(dplyr)
 library(ggplot2)
 library(forecast)
 library("tseries")
+library(SpatioTemporal)
+library(plotrix)
 # Clear workspace
 rm(list=ls())
 graphics.off()
@@ -111,18 +113,24 @@ cycle(msts)
 
 plot.ts(msts)
 
-model = auto.arima(ts[,2], seasonal = T)
+model = auto.arima(msts[,2], seasonal = T)
 
-tsdisplay(residuals(fit), lag.max=45, main='(1,1,1) Model Residuals')
+#Play with SpatioTemporal Package
 
-summary(model)
+obs = data.frame(paste(DF_final_small$date.x, DF_final_small$time, sep = " "), paste(DF_final_small$lon , DF_final_small$lat, sep = " "), DF_final_small$freePercent)
+colnames(obs) = c("date", "ID", "obs")
 
-# Forecast 
-# forcast days
-fc_days = 1
-fc_time = fc_days*24*60
-fc = forecast(model)
+createSTdata(obs)
 
-plot(fc)
+model_st_1 = create.data.matrix(obs = DF_final_small$freePercent, date = DF_final_small$date.x , ID = c(DF_final_small$lon, DF_final_small$lat), subset = NULL)
 
+createSTdata(DF_final_small)
+
+# K Means
+locations = data.frame(DF_final_small[!duplicated(DF_final_small[,c("SourceElementKey","lon","lat")]),][,c(1,2,3)])
+
+KMean = kmeans(locations[,2:3], 10)
+locations$cluster = KMean$cluster
+
+ggplot(data = locations, )
 
