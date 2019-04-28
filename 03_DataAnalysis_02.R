@@ -33,7 +33,7 @@ load("../Schramm, Cornelius - 02_Business_Analytics_Data/df_set_02_merged.RData"
 # Because of OneDrive we need to load from two different paths
 load("../02_Business_Analytics_Data/df_set_02_merged.RData")
 
-# Getting one day all obs
+# Getting clusters
 locations = data.frame(DF_final_small[!duplicated(DF_final_small[,c("SourceElementKey","lon","lat")]),][,c(1:3)])
 
 KMean = kmeans(locations[,2:3], 30)

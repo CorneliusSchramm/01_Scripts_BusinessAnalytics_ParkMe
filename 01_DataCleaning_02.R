@@ -93,25 +93,33 @@ DF_merged_small_v1 = merge(parking, weather,
 DF_merged_large_v1 = merge(parking_orig, weather, 
                             by="MergCol", all.x=TRUE)
 
-# Merging DF_merged_small_v1 and events
+# Merging DF_merged_v1 and events -------------
 DF_merged_small_v2 = merge(DF_merged_small_v1, events, 
                            by.x=c("date.x","PaidParkingArea"), 
                            by.y=c("date.x","Event Location - Neighborhood"),
                            all.y=F, all.x=T)
+DF_merged_small_v2[is.na(DF_merged_small_v2$Attendance),"Attendance"] = 0
 # Same for parking_orig
-DF_merged_large_v2 = merge(DF_merged_large_v1,events, by="date.x", all.x=TRUE)
+DF_merged_large_v2 = merge(DF_merged_large_v1, events, 
+                           by.x=c("date.x","PaidParkingArea"), 
+                           by.y=c("date.x","Event Location - Neighborhood"),
+                           all.y=F, all.x=T)
+DF_merged_large_v2[is.na(DF_merged_large_v2$Attendance),"Attendance"] = 0
 
 # Getting Weekday -----
 
-DF_merged_small_v2$Weekday = weekdays(DF_merged_small_v1$date.x)
+DF_merged_small_v2$Weekday = weekdays(DF_merged_small_v2$date.x)
 DF_merged_small_v2[DF_merged_small_v2$Weekday == "Samstag" | DF_merged_small_v2$Weekday == "Sonntag","is_we"] = 1
 DF_merged_small_v2[is.na(DF_merged_small_v2$is_we),"is_we"] = 0
 
 # Same for parking_orig
-DF_merged_large_v2$Weekday = weekdays(DF_merged_large_v1$date.x)
+DF_merged_large_v2$Weekday = weekdays(DF_merged_large_v2$date.x)
+DF_merged_large_v2[DF_merged_large_v2$Weekday == "Samstag" | DF_merged_large_v2$Weekday == "Sonntag","is_we"] = 1
+DF_merged_large_v2[is.na(DF_merged_large_v2$is_we),"is_we"] = 0
 
 # Sorting Columns
 DF_final_small = DF_merged_small_v2[,c(8,13,14,41,1,42,4,9,12,17,26:35,40,10,19)]
+
 
 #WHat does is this line supposed to do?
 #DF_final_small = DF_final_small[DF_final_small$date.x >= "2019-03-25" & DF_final_small$date.x <= "2019-04-22",]
