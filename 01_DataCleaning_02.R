@@ -77,9 +77,9 @@ parking = parking_orig[parking_orig$date>= "2019-03-25" & parking_orig$date <= "
 parking$hour = as.numeric(substr(parking$time, start = 1, stop = 2))
 parking = transform(parking, MergCol=paste(date, hour, sep="_"))
 # Same for parking_orig
-# memory.limit(70000) ## So we dont get an error due to too big of an vector 
-# parking_orig$hour = as.numeric(substr(parking_orig$time, start = 1, stop = 2))
-# parking_orig = transform(parking_orig, MergCol=paste(date, hour, sep="_"))
+memory.limit(70000) ## So we dont get an error due to too big of an vector 
+parking_orig$hour = as.numeric(substr(parking_orig$time, start = 1, stop = 2))
+parking_orig = transform(parking_orig, MergCol=paste(date, hour, sep="_"))
 
 
 # Merging --------------------
@@ -90,8 +90,8 @@ parking = transform(parking, MergCol=paste(date, hour, sep="_"))
 DF_merged_small_v1 = merge(parking, weather, 
                            by="MergCol", all.x=TRUE)
 # Same for parking_orig
-# DF_merged_large_v1 = merge(parking_orig, weather, 
-#                            by="MergCol", all.x=TRUE)
+DF_merged_large_v1 = merge(parking_orig, weather, 
+                            by="MergCol", all.x=TRUE)
 
 # Merging DF_merged_small_v1 and events
 DF_merged_small_v2 = merge(DF_merged_small_v1, events, 
@@ -99,7 +99,7 @@ DF_merged_small_v2 = merge(DF_merged_small_v1, events,
                            by.y=c("date.x","Event Location - Neighborhood"),
                            all.y=F, all.x=T)
 # Same for parking_orig
-# DF_merged_large_v2 = merge(DF_merged_large_v1,events, by="date.x", all.x=TRUE)
+DF_merged_large_v2 = merge(DF_merged_large_v1,events, by="date.x", all.x=TRUE)
 
 # Getting Weekday -----
 
@@ -108,7 +108,7 @@ DF_merged_small_v2[DF_merged_small_v2$Weekday == "Samstag" | DF_merged_small_v2$
 DF_merged_small_v2[is.na(DF_merged_small_v2$is_we),"is_we"] = 0
 
 # Same for parking_orig
-# DF_merged_large_v2$Weekday = weekdays(DF_merged_large_v1$date.x)
+DF_merged_large_v2$Weekday = weekdays(DF_merged_large_v1$date.x)
 
 # Sorting Columns
 DF_final_small = DF_merged_small_v2[,c(8,13,14,41,1,42,4,9,12,17,26:35,40,10,19)]
@@ -116,7 +116,7 @@ DF_final_small = DF_merged_small_v2[,c(8,13,14,41,1,42,4,9,12,17,26:35,40,10,19)
 #WHat does is this line supposed to do?
 #DF_final_small = DF_final_small[DF_final_small$date.x >= "2019-03-25" & DF_final_small$date.x <= "2019-04-22",]
 
-# DF_final_large = DF_merged_large_v2[,c(8,13,14,41,1,42,4,9,12,17,26:35,40,10,19)]
+DF_final_large = DF_merged_large_v2[,c(8,13,14,41,1,42,4,9,12,17,26:35,40,10,19)]
 
 #What is this supposed to do?
 # DF_final_large = DF_final_large[DF_final_large$date.x >= "2019-03-25" & DF_final_large$date.x <= "2019-04-22",]
