@@ -24,7 +24,7 @@ rm(list=ls())
 graphics.off()
 
 # ...
- set.seed(100)
+set.seed(100)
 
 
 # Load the previousely saved version of our parking data as well as new data (weather, events)
