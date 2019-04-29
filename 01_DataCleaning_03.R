@@ -51,19 +51,27 @@ locations[,3] = as.numeric(locations[,3])
 
 # Merge Back
 DF_final_large = merge(locations,parking_orig, by = "SourceElementKey", all=TRUE)
-DF_final_large = DF_final_large[,-c(2,3)]
+DF_final_large = DF_final_large[,-c(2,3,8,9,13:20)]
 
 DF_final_large$FreeSpots = DF_final_large$freePercent * DF_final_large$ParkingSpaceCount
 
 # Saving the indormation columns
-tempDF = DF_final_large[,c(2:5,10)]
+tempDF = DF_final_large[,c(1:2,6:8)]
 
 #Aggregate by clusters
 tempDF2= aggregate(DF_final_large$FreeSpots,
                    by=list(cluster=DF_final_large$cluster, date=DF_final_large$date, time= DF_final_large$time),
                    FUN=sum)
 
+#saving this part, so I dont have to run it again
+
+save.image(file = "../02_Business_Analytics_Data/df_set_03_tempCluster.RData")
+save.image(file = "../Schramm, Cornelius - 02_Business_Analytics_Data/df_set_03_tempCluster.RData")
+
+
 # Merging them back together #stoll mistake
+
+DF_clustered = merge(tempDF2, tempDF, by ="cluster")
 DF_large_clusterd = merge(tempDF2, tempDF, 
                           by.x=c("cluster","date", "time"), 
                           by.y=c("cluster","date", "time"),

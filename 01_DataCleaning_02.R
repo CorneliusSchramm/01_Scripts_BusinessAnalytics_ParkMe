@@ -99,7 +99,7 @@ DF_merged_small_v2 = merge(DF_merged_small_v1, events,
                            by.y=c("date.x","Event Location - Neighborhood"),
                            all.y=F, all.x=T)
 DF_merged_small_v2[is.na(DF_merged_small_v2$Attendance),"Attendance"] = 0
-# Same for parking_orig
+# Same for DF_merged_large
 DF_merged_large_v2 = merge(DF_merged_large_v1, events, 
                            by.x=c("date.x","PaidParkingArea"), 
                            by.y=c("date.x","Event Location - Neighborhood"),
