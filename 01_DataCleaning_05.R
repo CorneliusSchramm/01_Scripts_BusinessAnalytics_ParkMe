@@ -73,6 +73,6 @@ finalDF_large = finalDF_large[rowSums(is.na(finalDF_large[,2:1463])) != 1462]
 
 rm(DF_final_small, parking_filtered,parking_orig)
 
-#save.image(file = "../02_Business_Analytics_Data/df_set_04_Sort4Clust.RData")
+#save.image(file = "../02_Business_Analytics_Data/df_set_04_Sort4ClustBig.RData")
 save.image(file = "../Schramm, Cornelius - 02_Business_Analytics_Data/df_set_04_Sort4ClustBig.RData")
 
