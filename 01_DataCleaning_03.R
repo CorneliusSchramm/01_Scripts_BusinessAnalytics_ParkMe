@@ -1,8 +1,7 @@
 # Description ---------------
 
 # In this script
-# - clean weather and holiday
-# - merge
+# - cluster the parking meteres
 
 # Setup ----------------------------------------------
 
@@ -69,7 +68,7 @@ save.image(file = "../02_Business_Analytics_Data/df_set_03_tempCluster.RData")
 save.image(file = "../Schramm, Cornelius - 02_Business_Analytics_Data/df_set_03_tempCluster.RData")
 
 
-# Merging them back together #stoll mistake
+# Merging them back together #still mistake
 
 DF_clustered = merge(tempDF2, tempDF, by ="cluster")
 DF_large_clusterd = merge(tempDF2, tempDF, 
