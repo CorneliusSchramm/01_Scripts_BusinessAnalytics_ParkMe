@@ -1,13 +1,12 @@
 # Description ---------------
 
 # In this script
-# - cluster based on time series similarities
+# - sort the DF to prepare it for
 
 # Setup ----------------------------------------------
 
 # Load required packages
-library(quantmod)
-library(dtwclust)
+
 library(tidyverse)
 library(data.table)
 # Clear workspace
