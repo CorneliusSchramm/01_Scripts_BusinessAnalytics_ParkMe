@@ -46,7 +46,7 @@ load("../02_Business_Analytics_Data/df_set_02_merged.RData")
 # Prepare data -----
 
 # From large data
-p_large_slim = DF_merged_large_v1[,c(2,3,7,19)]
+p_large_slim = DF_merged_large_v1[,c(2,3,7,19,4)]
 
 # Choose large or small dataset to proceed
 parking_orig = DF_final_small[,c(5,7,1,23)]
@@ -143,18 +143,22 @@ fcast <- forecast(fit, h=60)
 plot(fcast, 
      xlim=range(11:12))
 
-# Zahlen verändern
+# Mit Parametern spielen
 
 pred_length = 1440
 fit2 = arima(ts(deseasonal_fPct[-c((15300-pred_length):15300)]),
-             order=c(1,1,7))
+             order=c(1,1,60))
+tsdisplay(residuals(fit2), 
+          lag.max=240, 
+          main='(1,1,1) Model Residuals')
 
 fcast2 <- forecast(fit2, h=pred_length)
 plot(fcast2,
-     xlim=range(12000:15300))
+     xlim=range(12000:15300),
+     ylim=range(0:1))
 lines(ts(deseasonal_fPct))
 
-# with seasonality
+# With seasonality
 pred_length = 1440
 fit_w_seasonality = auto.arima(ts(deseasonal_fPct[-c((15300-pred_length):15300)]), 
                                seasonal=TRUE)
