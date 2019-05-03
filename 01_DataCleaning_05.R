@@ -1,7 +1,7 @@
 # Description ---------------
 
 # In this script
-# - sort the DF to prepare it for
+# - cluster the time series based on similarities
 
 # Setup ----------------------------------------------
 
@@ -9,70 +9,52 @@
 
 library(tidyverse)
 library(data.table)
+library(quantmod)
+library(dtwclust)
+library(ggplot2)
+library(dtw)
+
 # Clear workspace
 rm(list=ls())
 graphics.off()
 
-#Load Data
-#load("../02_Business_Analytics_Data/df_set_02_merged.RData")
-
-#Because of Onedrive
-load("../Schramm, Cornelius - 02_Business_Analytics_Data/df_set_02_merged.RData")
-
-rm(DF_merged_large_v1)
-
-#Getting DF into right format
-# COls: Datetime| SourceElement Key 1| Source Element Key2| .............
+# Load Data
+load("../02_Business_Analytics_Data/df_set_04_Sort4Clust.RData")
+load("../Schramm, Cornelius - 02_Business_Analytics_Data/df_set_04_Sort4Clust.RData")
 
 
+# DO SOMETHING -----
 
-#Create empty time Series
-start = as.POSIXct("2019-03-24")
-end = as.POSIXct("2019-04-23")
-finalDF_large = as.data.table(seq(from=start, by="min", to=end))
-colnames(finalDF_large)= "datetime"
+# Standardizing all observations
+datetime = finalDF[,1]
+ScaledDF = scale(finalDF[,-1])
+FinalScaled  = cbind(datetime,ScaledDF)
 
-parking_orig = as.data.table(DF_merged_large_v1)
-parking_orig$FreSpots = parking_orig$freePercent * parking_orig$ParkingSpaceCount
+# Compartmentalizing by start and end dates-----------
+# This part still needs some work
+test = head(FinalScaled)
+NAind = (colnames(test)[colSums(is.na(test)) > 0])
 
-allkeys = sort((unique(DF_final_small$SourceElementKey)))
+!names(FinalScaled) %in% NAind
 
-for (a_Key in allkeys)  {
-  
-  # First for one then build For loop around it
-  parkingmeter = a_Key
-  
-  # Filter one parking meter
-  parking_filtered = parking_orig %>%
-    filter(SourceElementKey == parkingmeter)
-  
-  # Merge date and time into one cell
-  parking_filtered$datetime = paste(parking_filtered$date, parking_filtered$time)
-  parking_filtered = parking_filtered %>%
-    select(datetime, everything())
-  
-  # Right format
-  parking_filtered$datetime = as.POSIXct(parking_filtered$datetime, format="%Y-%m-%d %H:%M")
-  
-  # Order by date and time
-  parking_filtered = parking_filtered[order(parking_filtered$datetime),]
-  
-  # Reset index
-  rownames(parking_filtered) = NULL
-  
-  # Remove unwanted columns
-  parking_filtered = parking_filtered[, c(1,25)]
-  colnames(parking_filtered)= c("datetime", paste("Key", parkingmeter, sep = ""))
-  
-  # Overwrite finalDF to add new time series column with current Key
-  finalDF_large = merge(finalDF_large, parking_filtered, by= "datetime", all=TRUE)
-}
+DF_compart1 = subset(FinalScaled, select= !names(FinalScaled) %in% NAind)
+DF_compart2 = subset(FinalScaled, select=c(1,names(FinalScaled) %in% NAind))
 
-# Removing rows where there are only Nas for every coulmn
-finalDF_large = finalDF_large[rowSums(is.na(finalDF_large[,2:1463])) != 1462]
+# Converting to time series -----------------
+tsDF = as.ts(FinalScaled)
+SpielDF = tsDF[c(1:720),c(1,426:435)]
+SpielDF = SpielDF[,c(1:8)]
+plot.ts(SpielDF[,2:11], 
+        type = "b",
+        col = "blue")
 
-rm(DF_final_small, parking_filtered,parking_orig)
 
-#save.image(file = "../02_Business_Analytics_Data/df_set_04_Sort4ClustBig.RData")
-save.image(file = "../Schramm, Cornelius - 02_Business_Analytics_Data/df_set_04_Sort4ClustBig.RData")
+# Calculating distance
+distance = dist (SpielDF, method = "DTW") 
+
+# Hirachical Clustering
+hc = hclust(distance, method = "average")
+plot(hc)
+
+
 

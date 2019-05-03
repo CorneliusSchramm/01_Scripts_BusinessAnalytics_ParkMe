@@ -1,44 +1,45 @@
 # Description ---------------
 
-# In this script
-# - sort the DF to prepare it for
+# In this script we
+# - sort the DF to prepare it for clustering by timeseries similarity
+
+# Output format
+# Columns: Datetime | SourceElement Key 1 | Source Element Key2 | ...
+
 
 # Setup ----------------------------------------------
 
 # Load required packages
-
 library(tidyverse)
 library(data.table)
+
 # Clear workspace
 rm(list=ls())
 graphics.off()
 
-#Load Data
+# Load Data
 load("../02_Business_Analytics_Data/df_set_02_merged.RData")
-
-#Because of Onedrive
 load("../Schramm, Cornelius - 02_Business_Analytics_Data/df_set_02_merged.RData")
 
-rm(DF_merged_large_v1)
 
-#Getting DF into right format
-# COls: Datetime| SourceElement Key 1| Source Element Key2| .............
+# Create dataframe ----
 
-
-
-#Create empty time Series
-start = as.POSIXct("2019-03-24")
+# Create empty time Series
+start = as.POSIXct("2019-03-24") # FOR ONE WEEK !!!!
 end = as.POSIXct("2019-04-01")
-finalDF = as.data.table(seq(from=start, by="min", to=end))
-colnames(finalDF)= "datetime"
+finalDF = as.data.table(seq(from = start,
+                            by = "hour",
+                            to = end))
+colnames(finalDF) = "datetime"
 
-parking_orig = as.data.table(DF_final_small)
-parking_orig$FreSpots = parking_orig$freePercent * parking_orig$ParkingSpaceCount
+# Lazyness related 
+parking_orig = as.data.table(DF_merged)
 
-allkeys = sort((unique(DF_final_small$SourceElementKey)))
+# Sorted list of parkingmeter SourceElementKeys
+allkeys = sort((unique(DF_merged$SourceElementKey)))
 
+# Create timeseries for each individual parking meter
 for (a_Key in allkeys)  {
-  
   # First for one then build For loop around it
   parkingmeter = a_Key
   
@@ -61,18 +62,21 @@ for (a_Key in allkeys)  {
   rownames(parking_filtered) = NULL
   
   # Remove unwanted columns
-  parking_filtered = parking_filtered[, c(1,25)]
+  parking_filtered = parking_filtered[, c(1,25)] # CHECK IF COLUMNS ARE GEWD
   colnames(parking_filtered)= c("datetime", paste("Key", parkingmeter, sep = ""))
   
   # Overwrite finalDF to add new time series column with current Key
   finalDF = merge(finalDF, parking_filtered, by= "datetime", all=TRUE)
 }
 
-# Removing rows where there are only Nas for every coulmn
-finalDF = finalDF[rowSums(is.na(finalDF[,2:1463])) != 1462]
-
-# rm(bla, DF_final_small, parking_filtered,parking_orig,test)
-
-#save.image(file = "../02_Business_Analytics_Data/df_set_04_Sort4Clust.RData")
+# Removing rows where there are only NA's for every column # ONLY REMOVE NA'S THAT OCCURE BEFORE STARTING TIME IN THIS STEP
+# finalDF = finalDF[rowSums(is.na(finalDF[,2:1463])) != 1462] # CHECK IF COLUMNS ARE GEWD
 
 
+# Save ---- 
+
+# Remove unnecessary dataframes
+# rm(EDIT)
+
+# save.image(file = "../02_Business_Analytics_Data/df_set_04_Sort4Clust.RData")
+# save.image(file = "../Schramm, Cornelius - 02_Business_Analytics_Data/df_set_04_Sort4Clust.RData")

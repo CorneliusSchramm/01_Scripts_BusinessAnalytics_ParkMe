@@ -1,77 +1,67 @@
 # Description ---------------
 
 # In this script
-# - cluster the parking meteres
+# - cluster the parking meters 
+# - by geographical location
+# - using kmeans
+
 
 # Setup ----------------------------------------------
 
 # Load required packages
-
 library(tidyverse)
 library(dplyr)
 library(data.table)
 library(tidyr)
 library(ggplot2)
 
-
 # Clear workspace
 rm(list=ls())
 graphics.off()
 
-# Load the previousely saved version of our parking data as well as new data (weather, events)
-load("../02_Business_Analytics_Data/df_set_01.RData")
-events = fread("../02_Business_Analytics_Data/Special_Events_Permits.csv")
-weather = fread("../02_Business_Analytics_Data/weather.csv", header = T)
-#dates = fread("../02_Business_Analytics_Data/dates.csv")
-#holidays = fread("../02_Business_Analytics_Data/holidays.csv")
-# weather_2 = fread("../02_Business_Analytics_Data/history_export_2019-04-22T09_14_54.csv", header = T, sep = ";", skip = 11)
-# weather_1 = fread("../02_Business_Analytics_Data/history_export_2019-04-08T16_02_14.csv", header = T, sep = ";", skip = 11)
-
-
-
-# Because of OneDrive we need to load from two different paths
+# Load the previousely saved merged version of our parking data
+load("../02_Business_Analytics_Data/df_set_02_merged.RData")
 load("../Schramm, Cornelius - 02_Business_Analytics_Data/df_set_01.RData")
-events = fread("../Schramm, Cornelius - 02_Business_Analytics_Data/Special_Events_Permits.csv")
-weather = fread("../Schramm, Cornelius - 02_Business_Analytics_Data/weather.csv", header = T)
-#dates = fread("../Schramm, Cornelius - 02_Business_Analytics_Data/dates.csv")
-#holidays = fread("../Schramm, Cornelius - 02_Business_Analytics_Data/holidays.csv")
-#weather_2 = fread("../Schramm, Cornelius - 02_Business_Analytics_Data/history_export_2019-04-22T09_14_54.csv", header = T, sep = ";", skip = 11)
-#weather_1 = fread("../Schramm, Cornelius - 02_Business_Analytics_Data/history_export_2019-04-08T16_02_14.csv", header = T, sep = ";", skip = 11)
 
 
 # Getting clusters -----------
-locations = data.frame(parking_orig[!duplicated(parking_orig[,c("SourceElementKey","lon","lat")]),][,c(6,12,13)])
 
-KMean = kmeans(locations[,2:3], 30)
+# Get rid of unnecessary columns for plotting
+locations = data.frame(DF_merged[!duplicated(DF_merged[,c("SourceElementKey","lon","lat")]),][,c(6,12,13)]) # COLUMNS STIMMEN NICHT MEHR
+
+# Create cluster column and prepare for plotting
+KMean = kmeans(locations[,2:3], 30) # COLUMNS STIMMEN NICHT MEHR ???
 locations$cluster = as.factor(KMean$cluster)
 locations[,2] = as.numeric(locations[,2])
 locations[,3] = as.numeric(locations[,3])
 
+# Merge cluster back to all times and locations
+DF_merged = merge(locations, DF_merged, by = "SourceElementKey", all=TRUE)
+DF_merged = DF_merged[,-c(2,3,8,9,13:20)] # COLUMNS STIMMEN NICHT MEHR
 
-# Merge Back
-DF_final_large = merge(locations,parking_orig, by = "SourceElementKey", all=TRUE)
-DF_final_large = DF_final_large[,-c(2,3,8,9,13:20)]
+# Saving the information columns to temporary dataframe
+tempDF1 = DF_merged[,c(1:2,6:8)] # COLUMNS STIMMEN NICHT MEHR ???
 
-DF_final_large$FreeSpots = DF_final_large$freePercent * DF_final_large$ParkingSpaceCount
+# Aggregate by clusters
+tempDF2 = aggregate(DF_final_large$FreeSpots,
+                   by = list(cluster = DF_final_large$cluster, 
+                           date = DF_final_large$date, 
+                           time = DF_final_large$time),
+                   FUN = sum)
 
-# Saving the indormation columns
-tempDF = DF_final_large[,c(1:2,6:8)]
+# Merging them back together                           # NOT WORKING -- MISTAKE
+# DF_clustered = merge(tempDF2, tempDF1, by ="cluster")
+# DF_large_clusterd = merge(tempDF2, tempDF1, 
+#                           by.x=c("cluster","date", "time"), 
+#                           by.y=c("cluster","date", "time"),
+#                           all.x=T, all.y=F)
 
-#Aggregate by clusters
-tempDF2= aggregate(DF_final_large$FreeSpots,
-                   by=list(cluster=DF_final_large$cluster, date=DF_final_large$date, time= DF_final_large$time),
-                   FUN=sum)
+# Save ----
 
-#saving this part, so I dont have to run it again
+# Remove unnecessary dataframes
+# rm(# DO DIS)
 
-save.image(file = "../02_Business_Analytics_Data/df_set_03_tempCluster.RData")
-save.image(file = "../Schramm, Cornelius - 02_Business_Analytics_Data/df_set_03_tempCluster.RData")
+# save.image(file = "../02_Business_Analytics_Data/df_set_03_kmeanCluster.RData")
+# save.image(file = "../Schramm, Cornelius - 02_Business_Analytics_Data/df_set_03_kmeanCluster.RData")
 
 
-# Merging them back together #still mistake
-
-DF_clustered = merge(tempDF2, tempDF, by ="cluster")
-DF_large_clusterd = merge(tempDF2, tempDF, 
-                          by.x=c("cluster","date", "time"), 
-                          by.y=c("cluster","date", "time"),
-                          all.x=T, all.y=F)
