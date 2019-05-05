@@ -18,42 +18,42 @@ rm(list=ls())
 graphics.off()
 
 # Load Data
-load("../02_Business_Analytics_Data/df_set_02_merged.RData")
-load("../Schramm, Cornelius - 02_Business_Analytics_Data/df_set_02_merged.RData")
+load("../02_Business_Analytics_Data/df_set_03_kmeanCluster.RData")
+load("../Schramm, Cornelius - 02_Business_Analytics_Data/df_set_03_kmeanCluster.RData")
 
 
 # Create dataframe ----
 
 # Create empty time Series
 start = as.POSIXct("2019-03-24") # FOR ONE WEEK !!!!
-end = as.POSIXct("2019-04-01")
+end = as.POSIXct("2019-04-23")
 finalDF = as.data.table(seq(from = start,
                             by = "hour",
                             to = end))
 colnames(finalDF) = "datetime"
 
 # Lazyness related 
-parking_orig = as.data.table(DF_merged)
-
+parking_orig = as.data.table(DF_KMclust)
+parking_orig$cluster = as.numeric(parking_orig$cluster)
 # Sorted list of parkingmeter SourceElementKeys
-allkeys = sort((unique(DF_merged$SourceElementKey)))
+allClust = sort((unique(parking_orig$cluster)))
 
 # Create timeseries for each individual parking meter
-for (a_Key in allkeys)  {
+for (a_Clust in allClust)  {
   # First for one then build For loop around it
-  parkingmeter = a_Key
+  parkingmeter = a_Clust
   
   # Filter one parking meter
   parking_filtered = parking_orig %>%
-  filter(SourceElementKey == parkingmeter)
+    filter(cluster == parkingmeter)
   
-  # Merge date and time into one cell
-  parking_filtered$datetime = paste(parking_filtered$date, parking_filtered$time)
+  # Merge date and hour into one cell
+  parking_filtered$datetime = paste(parking_filtered$date, parking_filtered$hour)
   parking_filtered = parking_filtered %>%
     select(datetime, everything())
   
   # Right format
-  parking_filtered$datetime = as.POSIXct(parking_filtered$datetime, format="%Y-%m-%d %H:%M")
+  parking_filtered$datetime = as.POSIXct(parking_filtered$datetime, format="%Y-%m-%d %H")
   
   # Order by date and time
   parking_filtered = parking_filtered[order(parking_filtered$datetime),]
@@ -62,8 +62,8 @@ for (a_Key in allkeys)  {
   rownames(parking_filtered) = NULL
   
   # Remove unwanted columns
-  parking_filtered = parking_filtered[, c(1,25)] # CHECK IF COLUMNS ARE GEWD
-  colnames(parking_filtered)= c("datetime", paste("Key", parkingmeter, sep = ""))
+  parking_filtered = parking_filtered[, c(1,5)] # CHECK IF COLUMNS ARE GEWD
+  colnames(parking_filtered)= c("datetime", paste("Cluster", parkingmeter, sep = ""))
   
   # Overwrite finalDF to add new time series column with current Key
   finalDF= finalDF %>%
@@ -71,7 +71,8 @@ for (a_Key in allkeys)  {
 }
 
 # Removing rows where there are only NA's for every column # ONLY REMOVE NA'S THAT OCCURE BEFORE STARTING TIME IN THIS STEP
-# finalDF = finalDF[rowSums(is.na(finalDF[,2:1463])) != 1462] # CHECK IF COLUMNS ARE GEWD
+finalDF = finalDF[-c(1:32,718:720),]
+#finalDF = finalDF[rowSums(is.na(finalDF[,2:1463])) != 1462] # CHECK IF COLUMNS ARE GEWD
 
 
 # Save ---- 
@@ -79,5 +80,5 @@ for (a_Key in allkeys)  {
 # Remove unnecessary dataframes
 # rm(EDIT)
 
-save.image(file = "../02_Business_Analytics_Data/df_set_04_Sort4Clust_indiv.RData")
+#save.image(file = "../02_Business_Analytics_Data/df_set_04_Sort4Clust_Clust.RData")
 # save.image(file = "../Schramm, Cornelius - 02_Business_Analytics_Data/df_set_04_Sort4Clust.RData")

@@ -20,7 +20,7 @@ graphics.off()
 # Load the previousely saved version of our parking data as well as new data (weather, events)
 load("../02_Business_Analytics_Data/df_set_01.RData")
 events = fread("../02_Business_Analytics_Data/Special_Events_Permits.csv")
-weather = fread("../02_Business_Analytics_Data/weather.csv", header = T)
+weather = fread("../02_Business_Analytics_Data/weather_all.csv", header = T)
 
 # Because of OneDrive we need to load from two different paths
 load("../Schramm, Cornelius - 02_Business_Analytics_Data/df_set_01.RData")
@@ -58,14 +58,14 @@ weather$date = as.Date(with(weather, paste(Year, Month, Day, Hour, sep="-")), "%
 weather = transform(weather, MergCol = paste(date, Hour, sep="_"))
 
 # Create merge Column in parking data set
-parking_orig$hour = as.numeric(substr(parking_orig$time, start = 1, stop = 2))
-parking_orig = transform(parking_orig, MergCol=paste(date, hour, sep="_"))
+DF_hourly$hour = as.numeric(DF_hourly$hour)
+DF_hourly = transform(DF_hourly, MergCol=paste(date, hour, sep="_"))
 
 
 # Merging --------------------
 
 # Merge weather and parking
-DF_merged = merge(parking_orig, weather, 
+DF_merged = merge(DF_hourly, weather, 
                             by="MergCol", all.x=TRUE)
 
 # Merge resulting DF with events
@@ -86,16 +86,17 @@ DF_merged[DF_merged$Weekday == "Samstag" | DF_merged$Weekday == "Sonntag","is_we
 DF_merged[is.na(DF_merged$is_we),"is_we"] = 0
 
 # Sorting Columns
-DF_merged = DF_merged[,c(8,13,14,41,1,42,4,9,12,17,26:35,40,10,19)]
-
+DF_merged = DF_merged[,c(4,11,12,34,35, 1,5,7,8,19:31,33,6)]
+#check which columns have NAs
+colnames(DF_merged)[colSums(is.na(DF_merged)) > 0]
+#omit dat shit
+DF_merged = na.omit(DF_merged)
 
 # Save -----
 
 # Remove unnecessary dataframes
 # STILL HAVE TO EDIT DIS
-rm(dates, DF_merged_small_v1, DF_merged_small_v2, 
-   events, holidays,parking, parking_orig, weather, 
-   too_high_index, too_low_index)
+rm(DF_hourly,test)
 
-# save.image(file = "../02_Business_Analytics_Data/df_set_02_merged.RData")
+save.image(file = "../02_Business_Analytics_Data/df_set_02_merged.RData")
 # save.image(file = "../Schramm, Cornelius - 02_Business_Analytics_Data/df_set_02_merged.RData")
