@@ -58,14 +58,13 @@ parking_orig$FreeSpots = parking_orig$ParkingSpaceCount - parking_orig$PaidOccup
 
 # Aggregate per hour
 
-# making hour column
+# Making hour column
 parking_orig$hour = substr(parking_orig$time, start = 1, stop = 2)
 
-
-#Removing unnecesary Columns but create copyDF of important information to merge it later
+# Removing unnecesary Columns but create copyDF of important information to merge it later
 parking_InfoCopy = parking_orig[,c(6,1,18,7:13,16)]
 
-#making mergeCol
+# Making mergeCol
 parking_InfoCopy = transform(parking_InfoCopy, MergCol=paste(date, hour,SourceElementKey ,sep="_"))
 
 test = data.frame(parking_InfoCopy[!duplicated(parking_InfoCopy[,"MergCol"]),][,c(4:12)])
@@ -78,13 +77,14 @@ hourly_mean = aggregate(parking_orig$FreeSpots,
                                   date = parking_orig$date, 
                                   hour = parking_orig$hour),
                         FUN = mean)
-#making mergeCol
+
+# Making mergeCol
 hourly_mean = transform(hourly_mean, MergCol=paste(date, hour,SourceElementKey ,sep="_"))
 
 # Merging back together
 
-DF_hourly= hourly_mean %>%
-  left_join(test, by= "MergCol")
+DF_hourly = hourly_mean %>%
+  left_join(test, by="MergCol")
 
 
 # Save -----
