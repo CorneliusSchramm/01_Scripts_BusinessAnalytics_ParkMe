@@ -16,6 +16,7 @@
 library(ggplot2)
 library(forecast)
 library(tseries)
+library(lubridate)
 # library(SpatioTemporal)
 # library(plotrix)
 
@@ -49,9 +50,9 @@ load("../02_Business_Analytics_Data/df_set_02_merged.RData")
 p_large_slim = DF_merged[,c(1,6,7,24)]
 
 ####### Aggregated und mit absoluten Zahlen
-load("../Schramm, Cornelius - 02_Business_Analytics_Data/df_set_03_rasterCluster.RData")
+load("../Schramm, Cornelius - 02_Business_Analytics_Data/df_set_03_kmeanCluster.RData")
 library(data.table)
-tempDF2 = DF_Rastclust
+tempDF2 = DF_KMclust
 
 p_large_slim = tempDF2[, c(1:4)]
 colnames(p_large_slim)[1] = "SourceElementKey"
@@ -59,7 +60,7 @@ colnames(p_large_slim)[2] = "date.x"
 
 #######
 
-# Choose parking meter
+# Choose cluster
 parkingmeter = 3
 
 # Filter one parking meter
@@ -96,15 +97,69 @@ ggplot(parking_filtered, aes(as.numeric(datetime), FreeSpots)) +
   geom_vline(xintercept=as.numeric(as.POSIXct("2019-03-30")), color="red") +
   geom_vline(xintercept=as.numeric(as.POSIXct("2019-03-31")), color="red") +
   geom_vline(xintercept=as.numeric(as.POSIXct("2019-04-01")), color="red") +
-  geom_vline(xintercept=as.numeric(as.POSIXct("2019-04-02")), color="red") +
-  xlim(1553750000,1554000000)
+  geom_vline(xintercept=as.numeric(as.POSIXct("2019-04-02")), color="red") 
+#  xlim(1553750000,1554000000)
 
-ts = ts(parking_filtered[, c('x')])
+ts = ts(parking_filtered[, c('FreeSpots')])
 
 parking_filtered$cleanX = tsclean(ts)
-unique(parking_filtered$cleanX == parking_filtered$x)
+unique(parking_filtered$cleanX == parking_filtered$FreeSpots)
 # No outliers found all the same data as before. Drop column and save shorter name
 pf = parking_filtered[,c(1:3)]
+
+#msts tryout (2 seasonalities)
+
+ts_kmc_2 = msts(parking_filtered$FreeSpots, seasonal.periods = c(12,12*6), 
+                start = decimal_date(as.POSIXct("2019-03-25 08:00:00")),
+                ts.frequency = 12*6*52)
+
+#s_kmc_2 = ts_kmc_2[, c(1,3)]
+
+#tbats model smoothing
+tbats = tbats(ts_kmc_2)
+plot(tbats, main="Multiple Season Decomposition")
+
+tbats.components(tbats)
+# predicttions tbat
+sp = predict(tbats,h=12*6)
+plot(sp, main = "TBATS Forecast")
+
+# testing tbat model on real data
+
+##splitting and creating msts train and test
+parking_filtered_train = parking_filtered[parking_filtered$datetime <= "2019-04-16",]
+parking_filtered_test = parking_filtered[parking_filtered$datetime > "2019-04-16",]
+ts_kmc_train = msts(parking_filtered_train$FreeSpots, seasonal.periods = c(12,12*6), 
+                start = decimal_date(as.POSIXct("2019-03-25 08:00:00")),
+                ts.frequency = 12*6*52)
+ts_kmc_test = msts(parking_filtered_test$FreeSpots, seasonal.periods = c(12,12*6), 
+                   start = decimal_date(as.POSIXct("2019-04-15 08:00:00")),
+                   ts.frequency = 12*6*52)
+
+## preds
+tbats_2 = tbats(ts_kmc_train)
+
+preds = predict(tbats_2, h=12*6)
+plot(preds, main = "TBATS Forecast")
+lines(ts_kmc_test)
+
+#auto arima model
+
+fit = auto.arima(ts_kmc_2, D=4)
+tsdisplay(residuals(fit),
+          lag.max=66*4,
+          main='(1,1,1) Model Residuals') 
+
+#predictions auto arima
+fcast <- forecast(fit, h=66)
+plot(fcast)
+
+#show decimal date as actual date
+print(format(date_decimal(2019.29), "%d-%m-%Y %H"))
+
+
+
+
 
 # Moving average ----
 
