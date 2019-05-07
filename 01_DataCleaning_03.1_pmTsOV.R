@@ -76,13 +76,14 @@ NAcount = (as.data.frame(colSums(is.na(finalDF))))
 NAcount$SourceElementKey = row.names(NAcount)
 removeList = NAcount[which(NAcount$`colSums(is.na(finalDF))`>565),2]
 
-# finalDF = finalDF[rowSums(is.na(finalDF[,2:1463])) != 1462] 
 # Removing values
+finalDF = finalDF[ , -which(names(finalDF) %in% removeList )]
+
 
 # Save ---- 
 
 # Remove unnecessary dataframes
-# rm(EDIT)
+rm(DF_merged, NAcount, parking_filtered, parking_orig, a_Key, allkeys, end, parkingmeter, start)
 
-save.image(file = "../02_Business_Analytics_Data/df_set_04_Sort4Clust_indiv.RData")
+#save.image(file = "../02_Business_Analytics_Data/pmTsOV.RData")
 # save.image(file = "../Schramm, Cornelius - 02_Business_Analytics_Data/df_set_04_Sort4Clust.RData")
