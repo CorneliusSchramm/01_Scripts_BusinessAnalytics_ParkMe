@@ -2,6 +2,9 @@
 
 #### Mal checken: https://www.datascience.com/blog/introduction-to-forecasting-with-arima-in-r-learn-data-science-tutorials #####
 
+# Todo: Train Data für TBATS kann beide male 3 Wochen gross sein (gleiches modell), für das Train Data Set für RF muss dann letzte woche abgeschnitten werden (damit merge klappt, da variablen nur 3 monate)
+# momentan: nimmt erst 2 wochen und predicted daraus 3, dann 3 wochen und daraus 4. (aber unnötig, da erste beide wochen bereits biased)
+
 # In this script
 # - we will forecast the parking density
 
