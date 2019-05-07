@@ -19,7 +19,7 @@ library(ggmap)
 # Clear workspace
 rm(list=ls())
 graphics.off()
-
+set.seed(1)
 # Load the previousely saved merged version of our parking data
 load("../02_Business_Analytics_Data/df_set_02_merged.RData")
 load("../Schramm, Cornelius - 02_Business_Analytics_Data/df_set_02_merged.RData")
@@ -99,7 +99,7 @@ ggmap(map) +
 # Remove unnecessary dataframes
 # rm(DF_clustered, DF_merged, KMean, tempDF, tempDF2, map)
 
-# save.image(file = "../02_Business_Analytics_Data/df_set_03_kmeanCluster.RData")
-# save.image(file = "../Schramm, Cornelius - 02_Business_Analytics_Data/df_set_03_kmeanCluster.RData")
+save.image(file = "../02_Business_Analytics_Data/df_set_03_kmeanCluster.RData")
+save.image(file = "../Schramm, Cornelius - 02_Business_Analytics_Data/df_set_03_kmeanCluster.RData")
 
 
