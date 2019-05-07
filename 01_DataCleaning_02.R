@@ -25,10 +25,17 @@ weather = fread("../02_Business_Analytics_Data/weather_all.csv", header = T)
 # Because of OneDrive we need to load from two different paths
 load("../Schramm, Cornelius - 02_Business_Analytics_Data/df_set_01.RData")
 events = fread("../Schramm, Cornelius - 02_Business_Analytics_Data/Special_Events_Permits.csv")
-weather = fread("../Schramm, Cornelius - 02_Business_Analytics_Data/weather.csv", header = T)
+weather = fread("../Schramm, Cornelius - 02_Business_Analytics_Data/weather_all.csv", header = T)
 
 
 # Cleaning ---------------------
+
+# Eliminate parking meters that are far off the city center
+DF_hourly[,11] = as.numeric(DF_hourly[,11])
+DF_hourly[,12] = as.numeric(DF_hourly[,12])
+DF_hourly = DF_hourly %>%
+  filter(lat < 47.64 & lat > 47.59) %>%
+  filter(lon > -122.36 & lon < -122.30)
 
 events = separate(events,`Event End Date`, c("End.date", "End.time", "End AM/PM"), sep=" ")
 events$End.date = as.Date(events$End.date, "%m/%d/%Y")
@@ -87,16 +94,15 @@ DF_merged[is.na(DF_merged$is_we),"is_we"] = 0
 
 # Sorting Columns
 DF_merged = DF_merged[,c(4,11,12,34,35, 1,5,7,8,19:31,33,6)]
-#check which columns have NAs
+# Check which columns have NAs
 colnames(DF_merged)[colSums(is.na(DF_merged)) > 0]
-#omit dat shit
+# Omit dat shit
 DF_merged = na.omit(DF_merged)
 
 # Save -----
 
 # Remove unnecessary dataframes
-# STILL HAVE TO EDIT DIS
-rm(DF_hourly,test)
+rm(DF_hourly, weather, events)
 
 save.image(file = "../02_Business_Analytics_Data/df_set_02_merged.RData")
 # save.image(file = "../Schramm, Cornelius - 02_Business_Analytics_Data/df_set_02_merged.RData")
