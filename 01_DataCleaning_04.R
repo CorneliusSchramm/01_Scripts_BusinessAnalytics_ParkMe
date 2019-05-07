@@ -25,8 +25,8 @@ load("../Schramm, Cornelius - 02_Business_Analytics_Data/df_set_02_merged.RData"
 # Create dataframe ----
 
 # Create empty time Series
-start = as.POSIXct("2019-03-24") # FOR ONE WEEK !!!!
-end = as.POSIXct("2019-04-01")
+start = as.POSIXct("2019-03-25 08:00:00") # FOR ONE WEEK !!!!
+end = as.POSIXct("2019-04-22 21:00:00 ")
 finalDF = as.data.table(seq(from = start,
                             by = "hour",
                             to = end))
@@ -48,12 +48,12 @@ for (a_Key in allkeys)  {
   filter(SourceElementKey == parkingmeter)
   
   # Merge date and time into one cell
-  parking_filtered$datetime = paste(parking_filtered$date, parking_filtered$time)
+  parking_filtered$datetime = paste(parking_filtered$date, parking_filtered$hour)
   parking_filtered = parking_filtered %>%
     select(datetime, everything())
   
   # Right format
-  parking_filtered$datetime = as.POSIXct(parking_filtered$datetime, format="%Y-%m-%d %H:%M")
+  parking_filtered$datetime = as.POSIXct(parking_filtered$datetime, format="%Y-%m-%d %H")
   
   # Order by date and time
   parking_filtered = parking_filtered[order(parking_filtered$datetime),]
@@ -63,16 +63,21 @@ for (a_Key in allkeys)  {
   
   # Remove unwanted columns
   parking_filtered = parking_filtered[, c(1,25)] # CHECK IF COLUMNS ARE GEWD
-  colnames(parking_filtered)= c("datetime", paste("Key", parkingmeter, sep = ""))
+  colnames(parking_filtered)= c("datetime",  parkingmeter)
   
   # Overwrite finalDF to add new time series column with current Key
   finalDF= finalDF %>%
     left_join(parking_filtered, by= "datetime")
 }
 
-# Removing rows where there are only NA's for every column # ONLY REMOVE NA'S THAT OCCURE BEFORE STARTING TIME IN THIS STEP
-# finalDF = finalDF[rowSums(is.na(finalDF[,2:1463])) != 1462] # CHECK IF COLUMNS ARE GEWD
+# Remove Parking Meters that have less than 5 hours per day
+NAcount = (as.data.frame(colSums(is.na(finalDF))))
 
+NAcount$SourceElementKey = row.names(NAcount)
+removeList = NAcount[which(NAcount$`colSums(is.na(finalDF))`>565),2]
+
+# finalDF = finalDF[rowSums(is.na(finalDF[,2:1463])) != 1462] 
+# Removing values
 
 # Save ---- 
 
