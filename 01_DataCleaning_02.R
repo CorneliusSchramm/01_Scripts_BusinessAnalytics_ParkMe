@@ -37,6 +37,16 @@ DF_hourly = DF_hourly %>%
   filter(lat < 47.64 & lat > 47.59) %>%
   filter(lon > -122.36 & lon < -122.30)
 
+# Create FreePercent Column that gives the percentage of free lots per parking meter / cluster
+DF_hourly$freePercent = DF_hourly$x / DF_hourly$ParkingSpaceCount
+
+# Transform mistaken data (120% free into 100% free)
+DF_hourly$freePercent[DF_hourly$freePercent < 0] = 0
+DF_hourly$freePercent[DF_hourly$freePercent > 1] = 1
+
+ggplot(DF_hourly) +
+  geom_density(aes(freePercent), fill="345672",alpha=.6)
+
 events = separate(events,`Event End Date`, c("End.date", "End.time", "End AM/PM"), sep=" ")
 events$End.date = as.Date(events$End.date, "%m/%d/%Y")
 events = separate(events,`Event Start Date`, c("Start.date", "Start.time", "Start AM/PM"), sep=" ")
@@ -93,7 +103,7 @@ DF_merged[DF_merged$Weekday == "Samstag" | DF_merged$Weekday == "Sonntag","is_we
 DF_merged[is.na(DF_merged$is_we),"is_we"] = 0
 
 # Sorting Columns
-DF_merged = DF_merged[,c(4,11,12,34,35, 1,5,7,8,19:31,33,6)]
+DF_merged = DF_merged[,c(4,11,12,35,36,1,5,7,8,20:32,34,6,14)]
 # Check which columns have NAs
 colnames(DF_merged)[colSums(is.na(DF_merged)) > 0]
 # Omit dat shit

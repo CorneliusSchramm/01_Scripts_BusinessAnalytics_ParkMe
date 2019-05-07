@@ -14,6 +14,7 @@ library(dplyr)
 library(data.table)
 library(tidyr)
 library(ggplot2)
+library(ggmap)
 
 # Clear workspace
 rm(list=ls())
@@ -22,6 +23,9 @@ graphics.off()
 # Load the previousely saved merged version of our parking data
 load("../02_Business_Analytics_Data/df_set_02_merged.RData")
 load("../Schramm, Cornelius - 02_Business_Analytics_Data/df_set_02_merged.RData")
+
+# Google Maps API
+register_google(key="AIzaSyAfPULmtU7hUcoj4lboRAbzVg-810wrkJs")
 
 
 # Getting clusters -----------
@@ -48,11 +52,13 @@ DF_clustered = transform(DF_clustered, MergeCol=paste(date, hour,cluster ,sep="_
 tempDF = data.frame(DF_clustered[!duplicated(DF_clustered[,"MergeCol"]),][,])
 
 # Aggregate by clusters
-tempDF2 = aggregate(DF_clustered$FreeSpots,
+tempDF2 = aggregate(list(DF_clustered$FreeSpots,DF_clustered$ParkingSpaceCount),
                    by = list(cluster = DF_clustered$cluster, 
                            date = DF_clustered$date, 
                            hour = DF_clustered$hour),
                    FUN = sum)
+
+
 
 # Making mergeCol
 tempDF2 = transform(tempDF2, MergeCol=paste(date, hour,cluster ,sep="_"))
@@ -62,16 +68,36 @@ DF_KMclust = tempDF2 %>%
   left_join(tempDF, by= "MergeCol")
 
 # Sorting
-DF_KMclust = DF_KMclust[,-c(5,6,9,12,13,14,15,30)]
+DF_KMclust = DF_KMclust[,-c(6,7,10,13,14,15,16,31,32)]
 
 # Renaming
-colnames(DF_KMclust)[1:4]= c("cluster", "date", "hour", "FreeSpots")
-DF_KMclust = DF_KMclust[,-c(5,6)]
+colnames(DF_KMclust)[1:5]= c("cluster", "date", "hour", "FreeSpots", "ClustCap")
+DF_KMclust = DF_KMclust[,-c(6,7)]
+
+# Create freePercent for clusters
+DF_KMclust$freePercent_kmClust = DF_KMclust$FreeSpots / DF_KMclust$ClustCap
+
+ggplot(filter(DF_KMclust, date=="2019-03-30" & hour== 14)) +
+  geom_histogram(aes(freePercent_kmClust), fill="green4", bins=30) +
+  xlim(0,1)
+
+# Plot cluster
+map = get_map("Seattle", zoom = 13)
+# ggmap(map)
+# map
+ggmap(map) + 
+  geom_point(data=locations, 
+             mapping=aes(x=lon,
+                         y=lat,
+                         color=cluster),
+             alpha=.8) +
+  ylim(47.59, 47.64) +
+  xlim(-122.375, -122.3)
 
 # Save ----
 
 # Remove unnecessary dataframes
-# rm(DF_clustered, DF_merged, KMean, locations, tempDF, tempDF2)
+# rm(DF_clustered, DF_merged, KMean, tempDF, tempDF2, map)
 
 # save.image(file = "../02_Business_Analytics_Data/df_set_03_kmeanCluster.RData")
 # save.image(file = "../Schramm, Cornelius - 02_Business_Analytics_Data/df_set_03_kmeanCluster.RData")
