@@ -60,7 +60,7 @@ colnames(p_large_slim)[2] = "date.x"
 #######
 
 # Choose cluster
-parkingmeter = 1
+parkingmeter = 3
 
 # Filter one parking meter
 parking_filtered = p_large_slim %>%
