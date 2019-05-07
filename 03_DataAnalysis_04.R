@@ -49,8 +49,9 @@ load("../02_Business_Analytics_Data/df_set_02_merged.RData")
 p_large_slim = DF_merged[,c(1,6,7,24)]
 
 ####### Aggregated und mit absoluten Zahlen
-load("../Schramm, Cornelius - 02_Business_Analytics_Data/df_set_03_tempCluster.RData")
+load("../Schramm, Cornelius - 02_Business_Analytics_Data/df_set_03_rasterCluster.RData")
 library(data.table)
+tempDF2 = DF_Rastclust
 
 p_large_slim = tempDF2[, c(1:4)]
 colnames(p_large_slim)[1] = "SourceElementKey"
@@ -59,7 +60,7 @@ colnames(p_large_slim)[2] = "date.x"
 #######
 
 # Choose parking meter
-parkingmeter = 2
+parkingmeter = 3
 
 # Filter one parking meter
 parking_filtered = p_large_slim %>%
@@ -68,7 +69,7 @@ parking_filtered = p_large_slim %>%
 # Merge date and time into one cell
 parking_filtered$datetime = paste(parking_filtered$date.x, parking_filtered$hour)
 parking_filtered = parking_filtered %>%
-  select(datetime, date.x, x)
+  select(datetime, date.x, FreeSpots)
 # Right format
 parking_filtered$datetime = as.POSIXct(parking_filtered$datetime, format="%Y-%m-%d %H")
 
@@ -86,7 +87,7 @@ rownames(parking_filtered) = NULL
 
 # TS-Format and first plot ---- 
 
-ggplot(parking_filtered, aes(as.numeric(datetime), x)) + 
+ggplot(parking_filtered, aes(as.numeric(datetime), FreeSpots)) + 
   geom_line() + 
   ylab("Free Parking Spaces") +
   xlab("") +
@@ -95,7 +96,8 @@ ggplot(parking_filtered, aes(as.numeric(datetime), x)) +
   geom_vline(xintercept=as.numeric(as.POSIXct("2019-03-30")), color="red") +
   geom_vline(xintercept=as.numeric(as.POSIXct("2019-03-31")), color="red") +
   geom_vline(xintercept=as.numeric(as.POSIXct("2019-04-01")), color="red") +
-  geom_vline(xintercept=as.numeric(as.POSIXct("2019-04-02")), color="red")
+  geom_vline(xintercept=as.numeric(as.POSIXct("2019-04-02")), color="red") +
+  xlim(1553750000,1554000000)
 
 ts = ts(parking_filtered[, c('x')])
 

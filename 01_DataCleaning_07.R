@@ -72,10 +72,43 @@ locations = locations %>%
 locations = locations[,c(1,6,7)]
 DF_merged = merge(locations, DF_merged, by="SourceElementKey")
 
+# Renaming
+colnames(DF_merged)[8]= c("date")
+colnames(DF_merged)[26]= c("FreeSpots")
+colnames(DF_merged)[2:3]= c("ClusterLabel","cluster")
+
+# Aggregating by clusters----
+
+# Saving the information columns to temporary dataframe
+# Making mergeCol
+DF_merged = transform(DF_merged, MergeCol=paste(date, hour,cluster ,sep="_"))
+
+tempDF = data.frame(DF_merged[!duplicated(DF_merged[,"MergeCol"]),][,])
+
+# Aggregate by clusters
+tempDF2 = aggregate(DF_merged$FreeSpots,
+                    by = list(cluster = DF_merged$cluster, 
+                              date = DF_merged$date, 
+                              hour = DF_merged$hour),
+                    FUN = sum)
+
+# Making mergeCol
+tempDF2 = transform(tempDF2, MergeCol=paste(date, hour,cluster ,sep="_"))
+
+# Merging back together
+DF_Rastclust = tempDF2 %>%
+  left_join(tempDF, by= "MergeCol")
+
+# Sorting
+DF_Rastclust = DF_Rastclust[,-c(6,7,9,10,13,14,15,16,31)]
+DF_Rastclust = DF_Rastclust[,-6]
+
+# Renaming
+colnames(DF_Rastclust)[1:4]= c("cluster", "date", "hour", "FreeSpots")
 
 # Save ----- 
 
-rm(i, map, xsteps, ysteps, locations, df, tempDF)
+rm(df, DF_merged, xsteps, ysteps, locations, tempDF, tempDF2, i,map)
 
 # save.image(file = "../02_Business_Analytics_Data/df_set_03_rasterCluster.RData")
 # save.image(file = "../Schramm, Cornelius - 02_Business_Analytics_Data/df_set_03_rasterCluster.RData")
