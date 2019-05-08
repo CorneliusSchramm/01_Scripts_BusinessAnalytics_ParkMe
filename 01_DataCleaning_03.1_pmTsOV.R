@@ -77,13 +77,23 @@ NAcount$SourceElementKey = row.names(NAcount)
 removeList = NAcount[which(NAcount$`colSums(is.na(finalDF))`>565),2]
 
 # Removing values
-finalDF = finalDF[ , -which(names(finalDF) %in% removeList )]
+OV_DF = finalDF[, -which(names(finalDF) %in% removeList )]
 
+# Removing in DF_merged
+removeList = as.numeric(removeList)
+rmindex = which(DF_merged$SourceElementKey %in% removeList)
+DF_merged = DF_merged[-rmindex,]
+
+# 1erSP- gucken ob SourceElementKey 8397 raus ist
+which(parking_orig$SourceElementKey == 8397)
+which(DF_merged$SourceElementKey == 8397)
+# Ergebnis: lit
 
 # Save ---- 
 
 # Remove unnecessary dataframes
-rm(DF_merged, NAcount, parking_filtered, parking_orig, a_Key, allkeys, end, parkingmeter, start)
+rm(NAcount, parking_filtered, parking_orig, a_Key, allkeys, end, parkingmeter, start, finalDF, removeList, rmindex)
 
-#save.image(file = "../02_Business_Analytics_Data/pmTsOV.RData")
-# save.image(file = "../Schramm, Cornelius - 02_Business_Analytics_Data/df_set_04_Sort4Clust.RData")
+# save.image(file = "../02_Business_Analytics_Data/pmTsOV.RData")
+save(OV_DF, file = "../Schramm, Cornelius - 02_Business_Analytics_Data/pmTsOV.RData")
+save(DF_merged, file = "../Schramm, Cornelius - 02_Business_Analytics_Data/df_set_02_merged.RData")

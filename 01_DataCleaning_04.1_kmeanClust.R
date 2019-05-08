@@ -51,14 +51,16 @@ colnames(DF_clustered)[25]= c("FreeSpots")
 DF_clustered = transform(DF_clustered, MergeCol=paste(date, hour,cluster ,sep="_"))
 tempDF = data.frame(DF_clustered[!duplicated(DF_clustered[,"MergeCol"]),][,])
 
+# For imputing
+DF_clustered_slim = DF_clustered[,c(1,4,7,8,10,25,26)]
+save(DF_clustered_slim, file="../Schramm, Cornelius - 02_Business_Analytics_Data/pm_kmClust_relation.RData")
+
 # Aggregate by clusters
 tempDF2 = aggregate(list(DF_clustered$FreeSpots,DF_clustered$ParkingSpaceCount),
                    by = list(cluster = DF_clustered$cluster, 
                            date = DF_clustered$date, 
                            hour = DF_clustered$hour),
                    FUN = sum)
-
-
 
 # Making mergeCol
 tempDF2 = transform(tempDF2, MergeCol=paste(date, hour,cluster ,sep="_"))
@@ -97,9 +99,9 @@ ggmap(map) +
 # Save ----
 
 # Remove unnecessary dataframes
-# rm(DF_clustered, DF_merged, KMean, tempDF, tempDF2, map)
+rm(DF_clustered, DF_merged, KMean, tempDF, tempDF2, map, locations)
 
-save.image(file = "../02_Business_Analytics_Data/df_set_03_kmeanCluster.RData")
+# save.image(file = "../02_Business_Analytics_Data/df_set_03_kmeanCluster.RData")
 save.image(file = "../Schramm, Cornelius - 02_Business_Analytics_Data/df_set_03_kmeanCluster.RData")
 
 
