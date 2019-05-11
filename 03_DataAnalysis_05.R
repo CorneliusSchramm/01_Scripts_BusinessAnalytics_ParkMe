@@ -2,8 +2,8 @@
 
 #### Mal checken: https://www.datascience.com/blog/introduction-to-forecasting-with-arima-in-r-learn-data-science-tutorials #####
 
-# Todo: Train Data für TBATS kann beide male 3 Wochen gross sein (gleiches modell), für das Train Data Set für RF muss dann letzte woche abgeschnitten werden (damit merge klappt, da variablen nur 3 monate)
-# momentan: nimmt erst 2 wochen und predicted daraus 3, dann 3 wochen und daraus 4. (aber unnötig, da erste beide wochen bereits biased)
+# Todo: Train Data f?r TBATS kann beide male 3 Wochen gross sein (gleiches modell), f?r das Train Data Set f?r RF muss dann letzte woche abgeschnitten werden (damit merge klappt, da variablen nur 3 monate)
+# momentan: nimmt erst 2 wochen und predicted daraus 3, dann 3 wochen und daraus 4. (aber unn?tig, da erste beide wochen bereits biased)
 
 # In this script
 # - we will forecast the parking density
@@ -25,101 +25,84 @@ rm(list=ls())
 graphics.off()
 
 # ...
-# set.seed(100)
 theme_set(theme_minimal())
 
-# Load the previousely saved version of our parking data as well as new data (weather, events)
-load("../Schramm, Cornelius - 02_Business_Analytics_Data/df_set_02_merged.RData")
-# dates = fread("../Schramm, Cornelius - 02_Business_Analytics_Data/dates.csv")
-# holidays = fread("../Schramm, Cornelius - 02_Business_Analytics_Data/holidays.csv")
-# weather_01 = read_csv2("../02_Business_Analytics_Data/weather.csv") #(25th March to 22nd April)
-# weather_02 = read_csv2("../02_Business_Analytics_Data/history_export_2019-04-08T16_02_14.csv", skip =11)
-# events = fread("../02_Business_Analytics_Data/events.csv")
 
-# Because of OneDrive we need to load from two different paths
-load("../02_Business_Analytics_Data/df_set_02_merged.RData")
-# dates = fread("../02_Business_Analytics_Data/dates.csv")
-# holidays = fread("../02_Business_Analytics_Data/holidays.csv")
-# weather_01 = read_csv2("../Schramm, Cornelius - 02_Business_Analytics_Data/weather.csv") #(25th March to 22nd April)
-# weather_02 = read_csv2("../Schramm, Cornelius - 02_Business_Analytics_Data/history_export_2019-04-08T16_02_14.csv", skip =11)
-# events = fread("../Schramm, Cornelius - 02_Business_Analytics_Data/events.csv")
+### REAL ### ----------------------------------
+load("../Schramm, Cornelius - 02_Business_Analytics_Data/clustTsOVimp.RData")
+df_gathered = gather(data=OV_DF_imp, key=SourceElementKey , value=FreeParkingSpaces, 2:ncol(OV_DF_imp))
 
-# Prepare data -----
+# Merge with clusters
+load("../Schramm, Cornelius - 02_Business_Analytics_Data/pm_kmClust_relation.RData")
+reference = DF_clustered_slim[,c(1:2,5)]
+reference = data.frame(reference[!duplicated(reference[,"SourceElementKey"]),][,])
+df_gathered = merge(df_gathered, reference, by="SourceElementKey")
 
-# From large data
-p_large_slim = DF_merged
-
-####### Aggregated und mit absoluten Zahlen
-rm(list=ls())
-load("../Schramm, Cornelius - 02_Business_Analytics_Data/df_set_03_kmeanCluster.RData")
-
-p_large_slim = DF_KMclust[,1:21]
-colnames(p_large_slim)[1] = "SourceElementKey"
-colnames(p_large_slim)[2] = "date.x"
-
-#######
+# Aggregate by cluster
+tempDF = aggregate(list(df_gathered$FreeParkingSpaces,df_gathered$ParkingSpaceCount),
+                   by = list(cluster = df_gathered$cluster, 
+                             datetime = df_gathered$datetime),
+                   FUN = sum)
+# Colnames
+colnames(tempDF)[3:4] = c("freeParkingSpaces", "ClusterCap")
+### REAL ### ----------------------------------
 
 # Choose cluster
-parkingmeter = 3
+choice = 3
 
 # Filter one parking meter
-parking_filtered = p_large_slim %>%
-  filter(SourceElementKey == parkingmeter)
+parking_filtered = tempDF %>%
+  filter(cluster == choice)
 
-# Merge date and time into one cell
-parking_filtered$datetime = paste(parking_filtered$date.x, parking_filtered$hour)
+# Plot
+ggplot(parking_filtered, aes(x=datetime, y=freeParkingSpaces)) +
+  geom_line() +
+  geom_hline(yintercept=parking_filtered[1,4])
 
-# Right format
-parking_filtered$datetime = as.POSIXct(parking_filtered$datetime, format="%Y-%m-%d %H")
 
-# Order by date and time
-parking_filtered = parking_filtered[order(parking_filtered$datetime),]
-# Oder ohne die datetime spalte zu kreieren
-
-rownames(parking_filtered) = NULL
-
-# Training ----
+# Training ----------
 
 # msts (2 seasonalities)
-ts_kmc_2 = msts(parking_filtered$FreeSpots, seasonal.periods = c(12,12*6), 
+ts_kmc_2 = msts(parking_filtered$freeParkingSpaces, seasonal.periods = c(10,10*6), 
                 start = decimal_date(as.POSIXct("2019-03-25 08:00:00")),
-                ts.frequency = 12*6*52)
+                ts.frequency = 10*6*52)
 
 # tbats model smoothing
 tbats = tbats(ts_kmc_2)
 plot(tbats, main="Multiple Season Decomposition")
 
 tbats.components(tbats)
-# predicttions tbat
-sp = predict(tbats,h=12*6)
+# Predictions tbat
+sp = predict(tbats,h=10*6)
 plot(sp, main = "TBATS Forecast")
 
-# testing tbat model on real data ------------------------
+# Testing tbat model on real data ------------------------
 
-##splitting and creating msts train and test
+# Splitting and creating msts train and test
 parking_filtered_train = parking_filtered[parking_filtered$datetime <= "2019-04-09",]
 parking_filtered_test = parking_filtered[parking_filtered$datetime > "2019-04-09" & parking_filtered$datetime <= "2019-04-16",]
-ts_kmc_train = msts(parking_filtered_train$FreeSpots, seasonal.periods = c(12,12*6), 
+ts_kmc_train = msts(parking_filtered_train$freeParkingSpaces, seasonal.periods = c(10,10*6), 
                     start = decimal_date(as.POSIXct("2019-03-25 08:00:00")),
-                    ts.frequency = 12*6*52)
-ts_kmc_test = msts(parking_filtered_test$FreeSpots, seasonal.periods = c(12,12*6), 
+                    ts.frequency = 10*6*52)
+ts_kmc_test = msts(parking_filtered_test$freeParkingSpaces, seasonal.periods = c(10,10*6), 
                    start = decimal_date(as.POSIXct("2019-04-09 08:00:00")),
-                   ts.frequency = 12*6*52)
+                   ts.frequency = 10*6*52)
 
-## preds
+# Predictions
 tbats_2 = tbats(ts_kmc_train)
 
-preds = predict(tbats_2, h=12*6)
+preds = predict(tbats_2, h=10*6)
 plot(preds, main = "TBATS Forecast")
 lines(ts_kmc_test)
 
 
-#show decimal date as actual date
-print(format(date_decimal(2019.31), "%d-%m-%Y %H"))
+# Show decimal date as actual date
+# print(format(date_decimal(2019.31), "%d-%m-%Y %H"))
 
-#stacking
 
-#test data
+# Stacking ----
+
+# Test data
 parking_filtered_train_2 = parking_filtered[parking_filtered$datetime <= "2019-04-16",]
 parking_filtered_test_2 = parking_filtered[parking_filtered$datetime > "2019-04-16",]
 ts_kmc_train_2 = msts(parking_filtered_train_2$FreeSpots, seasonal.periods = c(12,12*6), 
@@ -131,11 +114,11 @@ preds_test = predict(tbats_test, h=12*6)
 
 parking_filtered_test_2$preds = preds_test$mean
 
-#create train data with preds from tbats
+# Create train data with preds from tbats
 parking_filtered_stacked = parking_filtered_test
 parking_filtered_stacked$preds = preds$mean
 
-#model building
+# Model building
   
 model = train(FreeSpots ~ ., data=parking_filtered_stacked, method="rf")
 tree_predict = predict(model, newdata = parking_filtered_test_2)
