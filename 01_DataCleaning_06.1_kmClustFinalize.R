@@ -11,6 +11,7 @@ library(data.table)
 library(tidyverse)
 library(ggplot2)
 
+
 # Clear workspace
 rm(list=ls())
 graphics.off()
@@ -21,6 +22,13 @@ theme_set(theme_minimal())
 # Load Data
 load("../Schramm, Cornelius - 02_Business_Analytics_Data/clustTsOVimp.RData")
 load("../Schramm, Cornelius - 02_Business_Analytics_Data/pm_kmClust_relation.RData")
+load("../Schramm, Cornelius - 02_Business_Analytics_Data/df_set_02_merged.RData")  
+
+
+# OneDrive
+load("../02_Business_Analytics_Data/clustTsOVimp.RData")
+load("../02_Business_Analytics_Data/pm_kmClust_relation.RData")
+load("../02_Business_Analytics_Data/df_set_02_merged.RData")  
 
 
 # Clean ------
@@ -39,4 +47,21 @@ tempDF = aggregate(list(df_gathered$FreeParkingSpaces,df_gathered$ParkingSpaceCo
                    FUN = sum)
 # Colnames
 colnames(tempDF)[3:4] = c("freeParkingSpaces", "ClusterCap")
-### REAL ### ----------------------------------
+
+
+# Getting Weather Data (again) -----------
+DF_merged$datetime = paste(DF_merged$date, DF_merged$hour)
+DF_merged = DF_merged %>%
+  select(datetime, c(11:22))
+DF_merged$datetime = as.POSIXct(DF_merged$datetime,format= "%Y-%m-%d %H")
+DF_merged = data.frame(DF_merged[!duplicated(DF_merged[,"datetime"]),][,])
+
+# Merging
+FinalDFKmean = merge(tempDF,DF_merged, by= "datetime")
+
+# rm(DF_clustered_slim, df_gathered, DF_merged, OV_DF_imp, reference, tempDF)
+
+# save.image(file = "../02_Business_Analytics_Data/FinalDFKmean.RData")
+
+
+
