@@ -11,7 +11,7 @@
 
 # Load required packages
 # library(data.table)
-# library(tidyverse)
+library(tidyverse)
 # library(dplyr)
 library(ggplot2)
 library(forecast)
@@ -50,6 +50,7 @@ load("../02_Business_Analytics_Data/df_set_02_merged.RData")
 p_large_slim = DF_merged[,c(1,6,7,24)]
 
 ####### Aggregated und mit absoluten Zahlen
+rm(list=ls())
 load("../Schramm, Cornelius - 02_Business_Analytics_Data/df_set_03_kmeanCluster.RData")
 library(data.table)
 tempDF2 = DF_KMclust
@@ -88,6 +89,7 @@ rownames(parking_filtered) = NULL
 
 # TS-Format and first plot ---- 
 
+# Just for fun and viewing data
 ggplot(parking_filtered, aes(as.numeric(datetime), FreeSpots)) + 
   geom_line() + 
   ylab("Free Parking Spaces") +
@@ -100,22 +102,25 @@ ggplot(parking_filtered, aes(as.numeric(datetime), FreeSpots)) +
   geom_vline(xintercept=as.numeric(as.POSIXct("2019-04-02")), color="red") 
 #  xlim(1553750000,1554000000)
 
+# ...
 ts = ts(parking_filtered[, c('FreeSpots')])
-
 parking_filtered$cleanX = tsclean(ts)
 unique(parking_filtered$cleanX == parking_filtered$FreeSpots)
 # No outliers found all the same data as before. Drop column and save shorter name
 pf = parking_filtered[,c(1:3)]
 
-#msts tryout (2 seasonalities)
+# Training ----
 
+# msts (2 seasonalities)
 ts_kmc_2 = msts(parking_filtered$FreeSpots, seasonal.periods = c(12,12*6), 
                 start = decimal_date(as.POSIXct("2019-03-25 08:00:00")),
                 ts.frequency = 12*6*52)
 
-#s_kmc_2 = ts_kmc_2[, c(1,3)]
+plot(ts_kmc_2)
 
-#tbats model smoothing
+# ts_kmc_2 = ts_kmc_2[, c(1,3)]
+
+# tbats model smoothing
 tbats = tbats(ts_kmc_2)
 plot(tbats, main="Multiple Season Decomposition")
 
@@ -143,6 +148,24 @@ preds = predict(tbats_2, h=12*6)
 plot(preds, main = "TBATS Forecast")
 lines(ts_kmc_test)
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 #auto arima model
 
 fit = auto.arima(ts_kmc_2, D=4)
@@ -155,7 +178,7 @@ fcast <- forecast(fit, h=66)
 plot(fcast)
 
 #show decimal date as actual date
-print(format(date_decimal(2019.29), "%d-%m-%Y %H"))
+print(format(date_decimal(2019.31), "%d-%m-%Y %H"))
 
 
 
