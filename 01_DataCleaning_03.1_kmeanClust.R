@@ -19,7 +19,7 @@ library(ggmap)
 # Clear workspace
 rm(list=ls())
 graphics.off()
-set.seed(1)
+
 # Load the previousely saved merged version of our parking data
 load("../02_Business_Analytics_Data/df_set_02_merged.RData")
 load("../Schramm, Cornelius - 02_Business_Analytics_Data/df_set_02_merged.RData")
@@ -34,6 +34,7 @@ register_google(key="AIzaSyAfPULmtU7hUcoj4lboRAbzVg-810wrkJs")
 locations = data.frame(DF_merged[!duplicated(DF_merged[,c("SourceElementKey","lon","lat")]),][,c(1:3)])
 
 # Create cluster column and prepare for plotting
+set.seed(100)
 KMean = kmeans(locations[,2:3], 30)
 locations$cluster = as.factor(KMean$cluster)
 
@@ -43,8 +44,6 @@ DF_clustered = DF_clustered[,-c(5,6)]
 
 # Renaming
 colnames(DF_clustered)[2:3]= c("lon","lat")
-colnames(DF_clustered)[7]= c("date")
-colnames(DF_clustered)[25]= c("FreeSpots")
 
 # Saving the information columns to temporary dataframe
 # Making mergeCol
@@ -53,17 +52,19 @@ tempDF = data.frame(DF_clustered[!duplicated(DF_clustered[,"MergeCol"]),][,])
 
 # For imputing
 DF_clustered_slim = DF_clustered[,c(1,4,7,8,10,25,26)]
-save(DF_clustered_slim, file="../Schramm, Cornelius - 02_Business_Analytics_Data/pm_kmClust_relation.RData")
+
+# Save this one for relation parking meters to kmean-Clusters
+# save(DF_clustered_slim, file="../Schramm, Cornelius - 02_Business_Analytics_Data/pm_kmClust_relation.RData")
 
 # Aggregate by clusters
-tempDF2 = aggregate(list(DF_clustered$FreeSpots,DF_clustered$ParkingSpaceCount),
+tempDF2 = aggregate(list(DF_clustered$freeParkingSpaces,DF_clustered$ParkingSpaceCount),
                    by = list(cluster = DF_clustered$cluster, 
                            date = DF_clustered$date, 
                            hour = DF_clustered$hour),
                    FUN = sum)
 
 # Making mergeCol
-tempDF2 = transform(tempDF2, MergeCol=paste(date, hour,cluster ,sep="_"))
+tempDF2 = transform(tempDF2, MergeCol=paste(date, hour, cluster ,sep="_"))
 
 # Merging back together
 DF_KMclust = tempDF2 %>%
@@ -73,20 +74,24 @@ DF_KMclust = tempDF2 %>%
 DF_KMclust = DF_KMclust[,-c(6,7,10,13,14,15,16,31,32)]
 
 # Renaming
-colnames(DF_KMclust)[1:5]= c("cluster", "date", "hour", "FreeSpots", "ClustCap")
+colnames(DF_KMclust)[1:5]= c("cluster", "date", "hour", "freeParkingSpaces", "ClustCap")
 DF_KMclust = DF_KMclust[,-c(6,7)]
 
 # Create freePercent for clusters
-DF_KMclust$freePercent_kmClust = DF_KMclust$FreeSpots / DF_KMclust$ClustCap
+DF_KMclust$freePercent_kmClust = DF_KMclust$freeParkingSpaces / DF_KMclust$ClustCap
 
+# Are there any false percentages?
+filter(DF_KMclust, freePercent_kmClust>1)
+filter(DF_KMclust, freePercent_kmClust<0)
+# Nahh
+
+# Plot distribution
 ggplot(filter(DF_KMclust, date=="2019-03-30" & hour== 14)) +
   geom_histogram(aes(freePercent_kmClust), fill="green4", bins=30) +
   xlim(0,1)
 
 # Plot cluster
 map = get_map("Seattle", zoom = 13)
-# ggmap(map)
-# map
 ggmap(map) + 
   geom_point(data=locations, 
              mapping=aes(x=lon,
@@ -99,9 +104,9 @@ ggmap(map) +
 # Save ----
 
 # Remove unnecessary dataframes
-rm(DF_clustered, DF_merged, KMean, tempDF, tempDF2, map, locations)
+rm(DF_clustered, DF_merged, KMean, tempDF, tempDF2, map, locations, DF_clustered_slim)
 
 # save.image(file = "../02_Business_Analytics_Data/df_set_03_kmeanCluster.RData")
-save.image(file = "../Schramm, Cornelius - 02_Business_Analytics_Data/df_set_03_kmeanCluster.RData")
+# save.image(file = "../Schramm, Cornelius - 02_Business_Analytics_Data/df_set_03_kmeanCluster.RData")
 
 

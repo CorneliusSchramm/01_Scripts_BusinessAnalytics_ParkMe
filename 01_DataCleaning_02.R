@@ -37,12 +37,14 @@ DF_hourly = DF_hourly %>%
   filter(lat < 47.64 & lat > 47.59) %>%
   filter(lon > -122.36 & lon < -122.30)
 
+# Transform mistaken data (120% free into 100% free)
+DF_hourly$x[DF_hourly$x < 0] = 0
+# No overbooked parking meters, see following lines code
+# DF_hourly$freePercent[DF_hourly$freePercent > 1] = 1
+
 # Create FreePercent Column that gives the percentage of free lots per parking meter / cluster
 DF_hourly$freePercent = DF_hourly$x / DF_hourly$ParkingSpaceCount
-
-# Transform mistaken data (120% free into 100% free)
-DF_hourly$freePercent[DF_hourly$freePercent < 0] = 0
-DF_hourly$freePercent[DF_hourly$freePercent > 1] = 1
+nrow(filter(DF_hourly, freePercent<=1 & freePercent>=0)) == nrow(DF_hourly)
 
 ggplot(DF_hourly) +
   geom_density(aes(freePercent), fill="345672",alpha=.6)
@@ -109,10 +111,29 @@ colnames(DF_merged)[colSums(is.na(DF_merged)) > 0]
 # Omit dat shit
 DF_merged = na.omit(DF_merged)
 
+# Column names
+colnames(DF_merged)[6] = "date"
+colnames(DF_merged)[10:24] = c("temp",
+                               "humidity",
+                               "meanSeaLevPressure",
+                               "precipitation",
+                               "snowfall",
+                               "TCloudCover",
+                               "HCloudCover",
+                               "MCloudCover",
+                               "LCloudCover",
+                               "sunDur",
+                               "windSpeed",
+                               "windDir",
+                               "windGust",
+                               "attendance",
+                               "freeParkingSpaces")
+
+
 # Save -----
 
 # Remove unnecessary dataframes
 rm(DF_hourly, weather, events)
 
-save.image(file = "../02_Business_Analytics_Data/df_set_02_merged.RData")
+# save.image(file = "../02_Business_Analytics_Data/df_set_02_merged.RData")
 # save.image(file = "../Schramm, Cornelius - 02_Business_Analytics_Data/df_set_02_merged.RData")

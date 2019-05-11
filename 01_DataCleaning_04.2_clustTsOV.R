@@ -25,7 +25,7 @@ load("../Schramm, Cornelius - 02_Business_Analytics_Data/df_set_03_kmeanCluster.
 # Create dataframe ----
 
 # Create empty time Series
-start = as.POSIXct("2019-03-24") # FOR ONE WEEK !!!!
+start = as.POSIXct("2019-03-24")
 end = as.POSIXct("2019-04-23")
 finalDF = as.data.table(seq(from = start,
                             by = "hour",
@@ -70,15 +70,14 @@ for (a_Clust in allClust)  {
     left_join(parking_filtered, by= "datetime")
 }
 
-# Removing rows where there are only NA's for every column # ONLY REMOVE NA'S THAT OCCURE BEFORE STARTING TIME IN THIS STEP
-finalDF = finalDF[-c(1:32,718:720),]
-#finalDF = finalDF[rowSums(is.na(finalDF[,2:1463])) != 1462] # CHECK IF COLUMNS ARE GEWD
+# Remove NAs before frist and after last point of time with data
+clustTsOV = finalDF[-c(1:32,718:720),]
 
 
 # Save ---- 
 
 # Remove unnecessary dataframes
-# rm(EDIT)
+rm(list=setdiff(ls(), "clustTsOV"))
 
-#save.image(file = "../02_Business_Analytics_Data/df_set_04_Sort4Clust_Clust.RData")
-# save.image(file = "../Schramm, Cornelius - 02_Business_Analytics_Data/df_set_04_Sort4Clust.RData")
+# save.image(file = "../02_Business_Analytics_Data/clustTsOV.RData")
+# save.image(file = "../Schramm, Cornelius - 02_Business_Analytics_Data/clustTsOV.RData")

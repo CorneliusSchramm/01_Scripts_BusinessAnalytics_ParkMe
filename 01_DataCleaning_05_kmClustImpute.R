@@ -90,3 +90,14 @@ for (a_clust in ClusterList ) {
 # Check results
 sum(is.na(OV_DF_imp))
 OV_DF_imp[,1] = Cluster1[,1]
+
+
+# Save -----
+
+# Remove unnecessary dataframes
+rm(list=setdiff(ls(), "OV_DF_imp"))
+
+# save.image(file = "../02_Business_Analytics_Data/clustTsOVimp.RData")
+# save.image(file = "../Schramm, Cornelius - 02_Business_Analytics_Data/clustTsOVimp.RData")
+
+

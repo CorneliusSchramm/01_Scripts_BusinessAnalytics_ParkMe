@@ -3,6 +3,7 @@
 # In this script we will:
 # - organize our parking data
 # - omitt empty columns
+# - Aggregate to hourly data
 
 
 # Setup ----------------------------------------------
@@ -54,15 +55,13 @@ parking_orig = parking_orig[,-3]
 parking_orig$FreeSpots = parking_orig$ParkingSpaceCount - parking_orig$PaidOccupancy
 
 
-# Aggregate -----
-
-# Aggregate per hour
+# Aggregate per hour -----
 
 # Making hour column
 parking_orig$hour = substr(parking_orig$time, start = 1, stop = 2)
 
 # Removing unnecesary Columns but create copyDF of important information to merge it later
-parking_InfoCopy = parking_orig[,c(6,1,18,7:13,16)]
+parking_InfoCopy = parking_orig[,c(6,1,18,3,7:13,16)]
 
 # Making mergeCol
 parking_InfoCopy = transform(parking_InfoCopy, MergCol=paste(date, hour,SourceElementKey ,sep="_"))
@@ -92,5 +91,5 @@ DF_hourly = hourly_mean %>%
 # Remove unnecessary dataframes
 # rm( # FILL DIS)
 
-#save.image(file = "../02_Business_Analytics_Data/df_set_01.RData")
+# save.image(file = "../02_Business_Analytics_Data/df_set_01.RData")
 # save.image(file = "../Schramm, Cornelius - 02_Business_Analytics_Data/df_set_01.RData")
