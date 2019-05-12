@@ -215,6 +215,7 @@ colnames(results)[1:3] = c("TS", "GLM", "RF")
 
 best_model = vector("character", stop)
 best_model = colnames(results)[apply(results,1,which.min)]
+view(best_model)
 
 # Save Plots (be carefull, all plots in session!)
 plots.dir.path = list.files(tempdir(), pattern="rs-graphics", full.names = TRUE); 
