@@ -8,7 +8,7 @@ library(ggmap)
 
 #Get map of Seattle via the Google API
 register_google(key="AIzaSyAfPULmtU7hUcoj4lboRAbzVg-810wrkJs")
-load("../02_Business_Analytics_Data/df_set_02_merged.RData")
+load("../02_Business_Analytics_Data/FinalDFKmean.RData")
 
 shinyServer(function(input, output) {
   output$plot = renderPlot({

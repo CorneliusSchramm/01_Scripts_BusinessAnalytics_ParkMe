@@ -58,8 +58,10 @@ DF_merged = data.frame(DF_merged[!duplicated(DF_merged[,"datetime"]),][,])
 
 # Merging
 FinalDFKmean = merge(tempDF,DF_merged, by= "datetime")
+FinalDFKmean$FreeClustPerc = FinalDFKmean$freeParkingSpaces/ FinalDFKmean$ClusterCap
 
-# rm(DF_clustered_slim, df_gathered, DF_merged, OV_DF_imp, reference, tempDF)
+# Remove unnecessary dataframes
+rm(list=setdiff(ls(), "FinalDFKmean"))
 
 # save.image(file = "../02_Business_Analytics_Data/FinalDFKmean.RData")
 
