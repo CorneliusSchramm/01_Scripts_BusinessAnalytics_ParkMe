@@ -94,7 +94,6 @@ datetime = datetime[c(1:60)]
 shinyPredsDF = cbind(shinyPredsDF,datetime)
 
 # Saving Predictions
-rm(list=setdiff(ls(), "shinyPredsDF"))
 #save.image(file = "../02_Business_Analytics_Data/shinyPredsDF.RData")
 
 
@@ -131,6 +130,12 @@ stop = max(as.numeric(FinalDFKmean$cluster))
 Result_TS_RSME = vector("numeric", stop)
 Result_GLM_RSME = vector("numeric", stop)
 Result_RF_RSME = vector("numeric", stop)
+DF_GLM = as.data.frame(parking_filtered_test$datetime)
+DF_RF = as.data.frame(parking_filtered_test$datetime)
+DF_TS = as.data.frame(parking_filtered_test$datetime)
+colnames(DF_GLM)[1] = "datetime"
+colnames(DF_RF)[1] = "datetime"
+colnames(DF_TS)[1] = "datetime"
 
 i = 1
 
@@ -176,6 +181,17 @@ for (i in 1:stop) {
   lines(pred_stacked_glm, col = "red")
   lines(pred_stacked_rf, col = "green")
   legend("bottomleft", legend = c("Time Series Predicitions", "GLM Stacked Predicitions", "RF Stacked Predictions"), col = c("blue", "red", "green"),text.col = c("blue", "red", "green"), bty = "n", cex = 0.8)
+  
+  #Build DF with results
+  
+  DF_TS = cbind(DF_TS, as.vector(preds$mean))
+  colnames(DF_TS)[i+1] = i
+  
+  DF_GLM = cbind(DF_GLM, glm_predict)
+  colnames(DF_GLM)[i+1] = i
+  
+  DF_RF = cbind(DF_RF, tree_predict)
+  colnames(DF_RF)[i+1] = i
   
   ## RMSE
   
