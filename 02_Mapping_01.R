@@ -109,3 +109,35 @@ parking_one$time = paste0(parking_one$time, " ", parking_one$`am/pm`)
 parking_one$time = format(strptime(parking_one$time, "%I:%M:%S %p"), format="%H:%M")
 parking_one = parking_one %>%
   filter(date=="03/18/2019")
+
+
+
+# -------------------------------
+
+load("../Schramm, Cornelius - 02_Business_Analytics_Data/locationsToPlot.RData")
+loc2 = data.frame(locations[!duplicated(locations[,"cluster"]),][,])
+
+
+map = get_map("Seattle", zoom = 13)
+ggmap(map) + 
+  geom_point(data=locations,
+             mapping=aes(x=lon,
+                         y=lat,
+                         color=cluster)) +
+  geom_point(data=loc2, alpha=.3,
+             mapping=aes(x=lon.center,
+                         y=lat.center,
+                         size=clustCap,
+                         color=cluster)) +
+  geom_label(data=loc2, 
+            mapping=aes(x=lon.center,
+                        y=lat.center,
+                        label=cluster),
+            fontface = "bold", fill="white") +
+  scale_size(range = c(1, 30)) +
+  ylim(47.59, 47.64) +
+  xlim(-122.375, -122.3) +
+  theme(line = element_blank(),  # remove the background, tickmarks, etc
+      axis.text=element_blank(),
+      axis.title=element_blank(),
+      panel.background = element_blank())

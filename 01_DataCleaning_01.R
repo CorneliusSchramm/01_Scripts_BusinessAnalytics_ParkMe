@@ -21,7 +21,7 @@ graphics.off()
 # Reading our data into R
 parking_orig = fread("../02_Business_Analytics_Data/Paid_Parking_Occupancy__Last_30_Days_ (1).csv")
 # Because of OneDrive we need to load from two different paths
-parking_orig = fread("../Schramm, Cornelius - 02_Business_Analytics_Data/Paid_Parking_Occupancy__Last_30_Days_ (1).csv")
+parking_orig = fread("../Schramm, Cornelius - 02_Business_Analytics_Data/Archiv/Paid_Parking_Occupancy__Last_30_Days_.csv")
 
 
 # Cleaning "parking_orig" -----------------

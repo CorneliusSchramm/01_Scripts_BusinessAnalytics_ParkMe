@@ -19,11 +19,11 @@ library(ggmap)
 rm(list=ls())
 graphics.off()
 
-# Load the previousely saved merged version of our parking data
-load("../02_Business_Analytics_Data/pm_kmClust_relation.RData")
-load("../02_Business_Analytics_Data/pmTsOv.RData")
-
-# Because of Onedrive
+# # Load the previousely saved merged version of our parking data
+# load("../02_Business_Analytics_Data/pm_kmClust_relation.RData")
+# load("../02_Business_Analytics_Data/pmTsOv.RData")
+# 
+# # Because of Onedrive
 load("../Schramm, Cornelius - 02_Business_Analytics_Data/pm_kmClust_relation.RData")
 load("../Schramm, Cornelius - 02_Business_Analytics_Data/pmTsOv.RData")
 
@@ -39,6 +39,11 @@ dropped_pm = 0
 
 # Negative values (!!!!!)
 sum(OV_DF < 0 & !is.na(OV_DF))
+
+# Deleted parking meters so we nee this step
+pm = as.data.frame(as.data.frame(colnames(OV_DF))[-1,])
+colnames(pm)[1] = "SourceElementKey"
+referenceDF = merge(referenceDF, pm, by= "SourceElementKey", all=F)
 
 # For Loop to ...
 for (a_clust in ClusterList ) {

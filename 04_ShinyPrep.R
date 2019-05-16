@@ -19,8 +19,13 @@ graphics.off()
 
 load("../02_Business_Analytics_Data/FinalDFKmean.RData")
 load("../02_Business_Analytics_Data/shinyPredsDF.RData")
-load("../02_Business_Analytics_Data/df_set_02_merged.RData")
+# load("../02_Business_Analytics_Data/df_set_02_merged.RData")
 load("../02_Business_Analytics_Data/pm_kmClust_relation.RData")
+
+load("../Schramm, Cornelius - 02_Business_Analytics_Data/FinalDFKmean.RData")
+load("../Schramm, Cornelius - 02_Business_Analytics_Data/shinyPredsDF.RData")
+# load("../Schramm, Cornelius - 02_Business_Analytics_Data/df_set_02_merged.RData")
+load("../Schramm, Cornelius - 02_Business_Analytics_Data/pm_kmClust_relation.RData")
 
 # Data_plot (locations modified)
 # SEK  lon   lat    freePerc

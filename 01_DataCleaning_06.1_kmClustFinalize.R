@@ -40,6 +40,24 @@ reference = DF_clustered_slim[,c(1:2,5)]
 reference = data.frame(reference[!duplicated(reference[,"SourceElementKey"]),][,])
 df_gathered = merge(df_gathered, reference, by="SourceElementKey")
 
+load("../Schramm, Cornelius - 02_Business_Analytics_Data/locations.RData")
+
+## DER DF IST GUT
+tempDF = data.frame(df_gathered[!duplicated(df_gathered[,"SourceElementKey"]),][,])
+aggregated_df = aggregate(list(tempDF$ParkingSpaceCount, tempDF$FreeParkingSpaces),
+                          by = list(cluster = tempDF$cluster),
+                          FUN = sum)
+colnames(aggregated_df)[2] = c("clustCap")
+aggregated_df = aggregated_df[,-3]
+
+# Save not-aggregated df
+save(df_gathered, file="../Schramm, Cornelius - 02_Business_Analytics_Data/impSEK.RData")
+save(aggregated_df, file="../Schramm, Cornelius - 02_Business_Analytics_Data/clustCap.RData")
+
+
+locations = merge(locations, aggregated_df, by="cluster", all=T)
+save(locations, file="../Schramm, Cornelius - 02_Business_Analytics_Data/locationsToPlot.RData")
+
 # Aggregate by cluster
 tempDF = aggregate(list(df_gathered$FreeParkingSpaces,df_gathered$ParkingSpaceCount),
                    by = list(cluster = df_gathered$cluster, 
@@ -63,7 +81,7 @@ FinalDFKmean$FreeClustPerc = FinalDFKmean$freeParkingSpaces/ FinalDFKmean$Cluste
 # Remove unnecessary dataframes
 rm(list=setdiff(ls(), "FinalDFKmean"))
 
-# save.image(file = "../02_Business_Analytics_Data/FinalDFKmean.RData")
+# save.image(file = "../Schramm, Cornelius - 02_Business_Analytics_Data/FinalDFKmean.RData")
 
 
 

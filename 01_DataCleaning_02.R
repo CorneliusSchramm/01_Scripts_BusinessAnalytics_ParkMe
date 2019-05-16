@@ -37,6 +37,24 @@ DF_hourly = DF_hourly %>%
   filter(lat < 47.64 & lat > 47.59) %>%
   filter(lon > -122.36 & lon < -122.30)
 
+# Check if Capacity stays constant
+a = sort(unique(DF_hourly$SourceElementKey))
+for (i in a){
+  if (length(unique(DF_hourly[DF_hourly$SourceElementKey == i,"ParkingSpaceCount"])) > 1){
+    print(paste(i,unique(DF_hourly[DF_hourly$SourceElementKey == i,"ParkingSpaceCount"])))
+  }
+}
+
+# Eliminate parking meters that change capacity
+DF_hourly = filter(DF_hourly, SourceElementKey != 8249 &
+         SourceElementKey != 9474 &
+         SourceElementKey != 11397 &
+         SourceElementKey != 30698 &
+         SourceElementKey != 34937 &
+         SourceElementKey != 56241 &
+         SourceElementKey != 36358 &
+         SourceElementKey != 69094)
+
 # Transform mistaken data (120% free into 100% free)
 DF_hourly$x[DF_hourly$x < 0] = 0
 # No overbooked parking meters, see following lines code
@@ -47,7 +65,8 @@ DF_hourly$freePercent = DF_hourly$x / DF_hourly$ParkingSpaceCount
 nrow(filter(DF_hourly, freePercent<=1 & freePercent>=0)) == nrow(DF_hourly)
 
 ggplot(DF_hourly) +
-  geom_density(aes(freePercent), fill="345672",alpha=.6)
+  geom_density(aes(freePercent), fill="345672",alpha=.6) +
+  theme_minimal()
 
 events = separate(events,`Event End Date`, c("End.date", "End.time", "End AM/PM"), sep=" ")
 events$End.date = as.Date(events$End.date, "%m/%d/%Y")
@@ -133,7 +152,7 @@ colnames(DF_merged)[10:24] = c("temp",
 # Save -----
 
 # Remove unnecessary dataframes
-rm(DF_hourly, weather, events)
+rm(DF_hourly, weather, events, a, i)
 
 # save.image(file = "../02_Business_Analytics_Data/df_set_02_merged.RData")
 # save.image(file = "../Schramm, Cornelius - 02_Business_Analytics_Data/df_set_02_merged.RData")

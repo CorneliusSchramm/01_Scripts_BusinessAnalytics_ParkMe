@@ -101,10 +101,18 @@ ggmap(map) +
   ylim(47.59, 47.64) +
   xlim(-122.375, -122.3)
 
+# Create plotting dataframe 
+centers = as.data.frame(KMean$centers)
+centers$cluster = seq(1,30)
+colnames(centers)[1:2] = c("lon.center", "lat.center")
+locations = merge(locations, centers, by = "cluster", all=T)
+# save(locations, file="../Schramm, Cornelius - 02_Business_Analytics_Data/locations.RData")
+
+
 # Save ----
 
 # Remove unnecessary dataframes
-rm(DF_clustered, DF_merged, KMean, tempDF, tempDF2, map, locations, DF_clustered_slim)
+# rm(DF_clustered, DF_merged, KMean, tempDF, tempDF2, map, locations, DF_clustered_slim, centers)
 
 # save.image(file = "../02_Business_Analytics_Data/df_set_03_kmeanCluster.RData")
 # save.image(file = "../Schramm, Cornelius - 02_Business_Analytics_Data/df_set_03_kmeanCluster.RData")
