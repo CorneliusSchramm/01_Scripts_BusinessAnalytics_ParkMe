@@ -221,3 +221,4 @@ view(best_model)
 plots.dir.path = list.files(tempdir(), pattern="rs-graphics", full.names = TRUE); 
 plots.png.paths = list.files(plots.dir.path, pattern=".png", full.names = TRUE)
 file.copy(from=plots.png.paths, to="../Schramm, Cornelius - 02_Business_Analytics_Data/Graphs")
+#corniisthässlich
