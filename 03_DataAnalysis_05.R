@@ -2,6 +2,9 @@
 
 #### Mal checken: https://www.datascience.com/blog/introduction-to-forecasting-with-arima-in-r-learn-data-science-tutorials #####
 
+# Todo: Train Data f?r TBATS kann beide male 3 Wochen gross sein (gleiches modell), f?r das Train Data Set f?r RF muss dann letzte woche abgeschnitten werden (damit merge klappt, da variablen nur 3 monate)
+# momentan: nimmt erst 2 wochen und predicted daraus 3, dann 3 wochen und daraus 4. (aber unn?tig, da erste beide wochen bereits biased)
+
 # In this script
 # - we will forecast the parking density
 
@@ -26,94 +29,76 @@ theme_set(theme_minimal())
 
 
 ### REAL ### ----------------------------------
-#load("../Schramm, Cornelius - 02_Business_Analytics_Data/clustTsOVimp.RData")
-#df_gathered = gather(data=OV_DF_imp, key=SourceElementKey , value=FreeParkingSpaces, 2:ncol(OV_DF_imp))
-
-### REAL with Features ### --------------------
 load("../Schramm, Cornelius - 02_Business_Analytics_Data/FinalDFKmean.RData")
 
-choice = 2
-parking_filtered = FinalDFKmean %>%
-  filter(cluster == choice)
-parking_filtered = parking_filtered[,-17] # remove free percent
-#---------------------------------------------
 # Merge with clusters
-#load("../Schramm, Cornelius - 02_Business_Analytics_Data/pm_kmClust_relation.RData")
-#reference = DF_clustered_slim[,c(1:2,5)]
-#reference = data.frame(reference[!duplicated(reference[,"SourceElementKey"]),][,])
-#df_gathered = merge(df_gathered, reference, by="SourceElementKey")
+load("../02_Business_Analytics_Data/FinalDFKmean.RData")
 
-# Aggregate by cluster
-#tempDF = aggregate(list(df_gathered$FreeParkingSpaces,df_gathered$ParkingSpaceCount),
-                #   by = list(cluster = df_gathered$cluster, 
-                #             datetime = df_gathered$datetime),
-                #   FUN = sum)
-# Colnames
-#colnames(tempDF)[3:4] = c("freeParkingSpaces", "ClusterCap")
-### REAL ### 
 
 # Choose cluster
-#choice = 3
+choice = 17
 
 # Filter one parking meter
-#parking_filtered = tempDF %>%
-#  filter(cluster == choice)
+parking_filtered = FinalDFKmean %>%
+  filter(cluster == choice)
 
 # Plot
-#ggplot(parking_filtered, aes(x=datetime, y=freeParkingSpaces)) +
-#  geom_line() +
-#  geom_hline(yintercept=parking_filtered[1,4])
+# ggplot(parking_filtered, aes(x=datetime, y=freeParkingSpaces)) +
+#   geom_line() +
+#   geom_hline(yintercept=parking_filtered[1,4])
 
 
-# Training -------------------------------
+# Training ----------
 
 # msts (2 seasonalities)
-#ts_kmc_2 = msts(parking_filtered$freeParkingSpaces, seasonal.periods = c(10,10*6), 
-          #      start = decimal_date(as.POSIXct("2019-03-25 08:00:00")),
-          #      ts.frequency = 10*6*52)
+ts_kmc_2 = msts(parking_filtered$freeParkingSpaces, seasonal.periods = c(10,10*6), 
+                start = decimal_date(as.POSIXct("2019-03-25 08:00:00")),
+                ts.frequency = 10*6*52)
 
 # tbats model smoothing
-#tbats = tbats(ts_kmc_2)
+tbats = tbats(ts_kmc_2)
 #plot(tbats, main="Multiple Season Decomposition")
 
+tbats.components(tbats)
 # Predictions tbat
-#sp = predict(tbats,h=10*6)
-#plot(sp, main = "TBATS Forecast")
+sp = predict(tbats,h=10*6)
+plot(sp, main = "TBATS Forecast")
 
-# Testing tbat model on REAL data with features ------------------------
+# Testing tbat model on real data ------------------------
 
 # Splitting and creating msts train and test
-
-ts_kmc = msts(parking_filtered$freeParkingSpaces, seasonal.periods = c(10,10*6), 
+parking_filtered_train = parking_filtered[parking_filtered$datetime <= "2019-04-09",]
+parking_filtered_test = parking_filtered[parking_filtered$datetime > "2019-04-09" & parking_filtered$datetime <= "2019-04-16",]
+ts_kmc_train = msts(parking_filtered_train$freeParkingSpaces, seasonal.periods = c(10,10*6), 
                     start = decimal_date(as.POSIXct("2019-03-25 08:00:00")),
                     ts.frequency = 10*6*52)
+ts_kmc_test = msts(parking_filtered_test$freeParkingSpaces, seasonal.periods = c(10,10*6), 
+                   start = decimal_date(as.POSIXct("2019-04-09 08:00:00")),
+                   ts.frequency = 10*6*52)
 
 # Predictions
-tbats_2 = tbats(ts_kmc)
+tbats_2 = tbats(ts_kmc_train)
 
 preds = predict(tbats_2, h=10*6)
 plot(preds, main = "TBATS Forecast")
+lines(ts_kmc_test)
+
+# Why mean-> not sure but dont care (maybe care a little)
+shinyPredsDF = as.data.frame(preds$mean)
+
+# Create empty time Series to merge to shinyPredsDF
+datetime = FinalDFKmean[FinalDFKmean$datetime >= "2019-04-09 08:00:00",]
+datetime = datetime[datetime$cluster == 17,1]  
+datetime = datetime[c(1:60)]
+# Cbind
+shinyPredsDF = cbind(shinyPredsDF,datetime)
+
+# Saving Predictions
+rm(list=setdiff(ls(), "shinyPredsDF"))
+#save.image(file = "../02_Business_Analytics_Data/shinyPredsDF.RData")
 
 
-# Show decimal date as actual date
-# print(format(date_decimal(2019.31), "%d-%m-%Y %H"))
 
-
-# Stacking ----
-
-# Test data
-parking_filtered$preds = tbats_2$fitted.values
-
-parking_filtered_train = parking_filtered[parking_filtered$datetime <= "2019-04-16",]
-parking_filtered_test = parking_filtered[parking_filtered$datetime > "2019-04-16",]
-
-# Create train data with preds from tbats
-
-# Model building RF
-  
-model_rf = train(freeParkingSpaces ~ ., data=parking_filtered_train, method="rf")
-tree_predict = predict(model_rf, newdata = parking_filtered_test)
-plot(tree_predict ~ parking_filtered_test$freeParkingSpaces)
 
 pred_stacked_rf = ts(tree_predict, start = decimal_date(as.POSIXct("2019-04-16 08:00:00")), frequency = 10*6*52)
 preds_test_ts = ts(preds$mean, start = decimal_date(as.POSIXct("2019-04-16 08:00:00")), frequency = 10*6*52 )
@@ -175,7 +160,7 @@ for (i in 1:stop) {
   
   # Model building RF
   
-  model_rf = train(freeParkingSpaces ~ ., data=parking_filtered_train, method="rf", ntree = 100) # aus perfomancegründen ntree = 100
+  model_rf = train(freeParkingSpaces ~ ., data=parking_filtered_train, method="rf", ntree = 100) # aus perfomancegrï¿½nden ntree = 100
   tree_predict = predict(model_rf, newdata = parking_filtered_test)
   
   pred_stacked_rf = ts(tree_predict, start = decimal_date(as.POSIXct("2019-04-16 08:00:00")), frequency = 10*6*52)
@@ -204,7 +189,7 @@ for (i in 1:stop) {
 
 #----- Ende LOOP -----
 
-# Total RSME über alle Cluster
+# Total RSME ï¿½ber alle Cluster
 sum(Result_TS_RSME)       
 sum(Result_GLM_RSME)
 sum(Result_RF_RSME)
@@ -221,4 +206,4 @@ view(best_model)
 plots.dir.path = list.files(tempdir(), pattern="rs-graphics", full.names = TRUE); 
 plots.png.paths = list.files(plots.dir.path, pattern=".png", full.names = TRUE)
 file.copy(from=plots.png.paths, to="../Schramm, Cornelius - 02_Business_Analytics_Data/Graphs")
-#corniisthässlich
+#corniisthï¿½sslich
