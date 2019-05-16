@@ -18,6 +18,7 @@ library(forecast)
 library(tseries)
 library(lubridate)
 library(caret)
+library(car)
 
 
 # Clear workspace
@@ -130,9 +131,15 @@ stop = max(as.numeric(FinalDFKmean$cluster))
 Result_TS_RSME = vector("numeric", stop)
 Result_GLM_RSME = vector("numeric", stop)
 Result_RF_RSME = vector("numeric", stop)
+
+parking_filtered = FinalDFKmean %>%
+  filter(cluster == 1)
+parking_filtered_train = parking_filtered[parking_filtered$datetime <= "2019-04-16",]
+parking_filtered_test = parking_filtered[parking_filtered$datetime > "2019-04-16",]
 DF_GLM = as.data.frame(parking_filtered_test$datetime)
 DF_RF = as.data.frame(parking_filtered_test$datetime)
 DF_TS = as.data.frame(parking_filtered_test$datetime)
+
 colnames(DF_GLM)[1] = "datetime"
 colnames(DF_RF)[1] = "datetime"
 colnames(DF_TS)[1] = "datetime"
@@ -222,4 +229,27 @@ view(best_model)
 plots.dir.path = list.files(tempdir(), pattern="rs-graphics", full.names = TRUE); 
 plots.png.paths = list.files(plots.dir.path, pattern=".png", full.names = TRUE)
 file.copy(from=plots.png.paths, to="../Schramm, Cornelius - 02_Business_Analytics_Data/Graphs")
-#corniisth�sslich
+
+
+## Save Data Frames
+save(DF_GLM,file = "../Schramm, Cornelius - 02_Business_Analytics_Data/results_glm.RData")
+save(DF_RF,file = "../Schramm, Cornelius - 02_Business_Analytics_Data/results_rf.RData")
+save(DF_TS,file = "../Schramm, Cornelius - 02_Business_Analytics_Data/results_ts.RData")
+save(best_model, file = "../Schramm, Cornelius - 02_Business_Analytics_Data/best_model.RData")
+
+
+# auto.arima TEST ---------------
+
+# Set up harmonic regressors
+fourier_train = fourier(ts_kmc_train, K = c(2,4))
+fourier_test = fourier(ts_kmc_test, K = c(2,4))
+
+data_train = as.matrix(parking_filtered_train[c(5,7,9,12,13,14,15)])
+data_test = as.matrix(parking_filtered_test[c(5,7,9,12,13,14,15)])
+# Fit regression model with ARIMA errors
+
+model_arima = auto.arima(ts_kmc_train, xreg = cbind(fourier_train,data_train), seasonal = T)
+
+pred_arima = forecast(model_arima, xreg=cbind(fourier_test,data_test))
+plot(ts_kmc)
+lines(pred_arima$mean, col = "red")
