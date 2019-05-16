@@ -11,7 +11,7 @@ shinyUI(fluidPage(
                       tabsetPanel(
                         tabPanel("Where Do I want to go?",
                                  sidebarLayout(
-                                   sidebarPanel("Please find the area number that corresponds to where you would like to park your car."),
+                                   sidebarPanel("Please find the area number that corresponds to where you would like to park your car and proceed to the 'Give me a prediction' section."),
                                    mainPanel(
                                      plotOutput("plotW2Go", width = "100%",  height = "900px"))
                                  )),
@@ -36,14 +36,12 @@ shinyUI(fluidPage(
                                                  value=8)
                                    ),
                                    mainPanel(tabsetPanel(
-                                     tabPanel("Overview Map"#,
-                                              #plotOutput("plot", width = "100%",  height = "900px")
+                                     tabPanel("Overview Map",
+                                              plotOutput("plotPred", width = "100%",  height = "900px")
                                               ),
-                                     tabPanel("Number of Free Parking Spots" )
-                                     
-                                    
+                                     tabPanel("Number of Free Parking Spots",
+                                              textOutput("ClusterPred"))
                                    )
-                                     
                                    )
                                  ))
                       )),
