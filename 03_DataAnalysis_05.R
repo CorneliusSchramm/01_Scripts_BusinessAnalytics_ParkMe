@@ -131,18 +131,31 @@ stop = max(as.numeric(FinalDFKmean$cluster))
 Result_TS_RSME = vector("numeric", stop)
 Result_GLM_RSME = vector("numeric", stop)
 Result_RF_RSME = vector("numeric", stop)
+Result_AA_RSME = vector("numeric", stop)
 
 parking_filtered = FinalDFKmean %>%
   filter(cluster == 1)
 parking_filtered_train = parking_filtered[parking_filtered$datetime <= "2019-04-16",]
 parking_filtered_test = parking_filtered[parking_filtered$datetime > "2019-04-16",]
+ts_kmc_train = msts(parking_filtered_train$freeParkingSpaces, seasonal.periods = c(10,10*6), 
+                    start = decimal_date(as.POSIXct("2019-03-25 08:00:00")),
+                    ts.frequency = 10*6*52)
+ts_kmc_test = msts(parking_filtered_test$freeParkingSpaces, seasonal.periods = c(10,10*6), 
+                   start = decimal_date(as.POSIXct("2019-04-16 08:00:00")),
+                   ts.frequency = 10*6*52)
+
 DF_GLM = as.data.frame(parking_filtered_test$datetime)
 DF_RF = as.data.frame(parking_filtered_test$datetime)
 DF_TS = as.data.frame(parking_filtered_test$datetime)
+DF_AA = as.data.frame(parking_filtered_test$datetime)
 
 colnames(DF_GLM)[1] = "datetime"
 colnames(DF_RF)[1] = "datetime"
 colnames(DF_TS)[1] = "datetime"
+colnames(DF_AA)[1] = "datetime"
+
+fourier_train = fourier(ts_kmc_train, K = c(2,4))
+fourier_test = fourier(ts_kmc_test, K = c(2,4))
 
 i = 1
 
@@ -183,11 +196,24 @@ for (i in 1:stop) {
   glm_predict = predict(model_glm, newdata = parking_filtered_test)
   
   pred_stacked_glm = ts(glm_predict, start = decimal_date(as.POSIXct("2019-04-16 08:00:00")), frequency = 10*6*52)
+  
+  # ARIMA Model Build
+  
+  data_train = as.matrix(parking_filtered_train[c(5,7,9,12,13,14,15)])
+  data_test = as.matrix(parking_filtered_test[c(5,7,9,12,13,14,15)])
+  model_arima = auto.arima(ts_kmc_train, xreg = cbind(fourier_train,data_train), seasonal = T)
+  
+  arima_predict = forecast(model_arima, xreg=cbind(fourier_test,data_test))
+  pred_arima_ts = ts(arima_predict$mean, start = decimal_date(as.POSIXct("2019-04-16 08:00:00")), frequency = 10*6*52 )
+  
+  ##Plotting
+  
   plot(ts_kmc, main = paste("Predicitions for Cluster ", i), xlab = "Date/Time in decimal", ylab = "Free parking spots")
   lines(preds_test_ts, col = "blue")
   lines(pred_stacked_glm, col = "red")
-  lines(pred_stacked_rf, col = "green")
-  legend("bottomleft", legend = c("Time Series Predicitions", "GLM Stacked Predicitions", "RF Stacked Predictions"), col = c("blue", "red", "green"),text.col = c("blue", "red", "green"), bty = "n", cex = 0.8)
+  lines(pred_stacked_rf, col = "green4")
+  lines(pred_arima_ts, col = "orange")
+  legend("bottomleft", legend = c("TBATS Predicitions", "GLM Stacked Predicitions", "RF Stacked Predictions", "Auto Arima + Fourier Predictions"), col = c("blue", "red", "green4", "orange"),text.col = c("blue", "red", "green4", "orange"), bty = "n", cex = 0.8)
   
   #Build DF with results
   
@@ -200,11 +226,15 @@ for (i in 1:stop) {
   DF_RF = cbind(DF_RF, tree_predict)
   colnames(DF_RF)[i+1] = i
   
+  DF_AA = cbind(DF_AA, as.vector(arima_predict$mean))
+  colnames(DF_AA)[i+1] = i
+  
   ## RMSE
   
   Result_TS_RSME[i] = RMSE(preds$mean, parking_filtered_test$freeParkingSpaces)
   Result_GLM_RSME[i] = RMSE(glm_predict, parking_filtered_test$freeParkingSpaces)
   Result_RF_RSME[i] = RMSE(tree_predict, parking_filtered_test$freeParkingSpaces)
+  Result_AA_RSME[i] = RMSE(arima_predict$mean, parking_filtered_test$freeParkingSpaces)
   
   i = i+1
   
@@ -216,10 +246,11 @@ for (i in 1:stop) {
 sum(Result_TS_RSME)       
 sum(Result_GLM_RSME)
 sum(Result_RF_RSME)
+sum(Result_AA_RSME)
 
 # select Model for each cluster
-results = as.data.frame(cbind(Result_TS_RSME, Result_GLM_RSME, Result_RF_RSME))
-colnames(results)[1:3] = c("TS", "GLM", "RF")
+results = as.data.frame(cbind(Result_TS_RSME, Result_GLM_RSME, Result_RF_RSME, Result_AA_RSME))
+colnames(results)[1:4] = c("TS", "GLM", "RF", "ARIMA")
 
 best_model = vector("character", stop)
 best_model = colnames(results)[apply(results,1,which.min)]
@@ -235,6 +266,7 @@ file.copy(from=plots.png.paths, to="../Schramm, Cornelius - 02_Business_Analytic
 save(DF_GLM,file = "../Schramm, Cornelius - 02_Business_Analytics_Data/results_glm.RData")
 save(DF_RF,file = "../Schramm, Cornelius - 02_Business_Analytics_Data/results_rf.RData")
 save(DF_TS,file = "../Schramm, Cornelius - 02_Business_Analytics_Data/results_ts.RData")
+save(DF_AA,file = "../Schramm, Cornelius - 02_Business_Analytics_Data/results_aa.RData")
 save(best_model, file = "../Schramm, Cornelius - 02_Business_Analytics_Data/best_model.RData")
 
 
@@ -251,5 +283,14 @@ data_test = as.matrix(parking_filtered_test[c(5,7,9,12,13,14,15)])
 model_arima = auto.arima(ts_kmc_train, xreg = cbind(fourier_train,data_train), seasonal = T)
 
 pred_arima = forecast(model_arima, xreg=cbind(fourier_test,data_test))
-plot(ts_kmc)
-lines(pred_arima$mean, col = "red")
+
+# Plotting ------
+
+plot(ts_kmc, main = paste("Predicitions for Cluster ", i), xlab = "Date/Time in decimal", ylab = "Free parking spots")
+lines(preds_test_ts, col = "blue")
+lines(pred_stacked_glm, col = "red")
+lines(pred_stacked_rf, col = "green4")
+lines(pred_arima$mean, col = "orange")
+legend("bottomleft", legend = c("TBATS Predicitions", "GLM Stacked Predicitions", "RF Stacked Predictions", "Auto Arima + Fourier Predictions"), col = c("blue", "red", "green4", "orange"),text.col = c("blue", "red", "green4", "orange"), bty = "n", cex = 0.8)
+
+
