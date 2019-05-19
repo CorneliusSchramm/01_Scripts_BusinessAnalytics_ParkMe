@@ -27,21 +27,17 @@ shinyUI(fluidPage(
                                      dateInput(
                                        "dateInput",
                                        "Which Date?",
-                                       min= "2019-03-25", max = "2019-04-22",
-                                       value = "2019-03-25"
+                                       min= "2019-04-16", max = "2019-04-22",
+                                       value = "2019-04-16"
                                      ),
                                      sliderInput("hourInput",
                                                  "Which hour?",
                                                  min=9, max=17,
                                                  value=8)
                                    ),
-                                   mainPanel(tabsetPanel(
-                                     tabPanel("Overview Map",
-                                              plotOutput("plotPred", width = "100%",  height = "900px")
-                                              ),
-                                     tabPanel("Number of Free Parking Spots",
-                                              textOutput("ClusterPred"))
-                                   )
+                                   mainPanel(
+                                     textOutput("ClusterPred"),
+                                     plotOutput("plotPred", width = "100%",  height = "900px")
                                    )
                                  ))
                       )),
@@ -61,6 +57,7 @@ shinyUI(fluidPage(
                         ),
                         mainPanel(
                           plotOutput("plot", width = "100%",  height = "900px")
+                          #textOutput("please")
                         )
                       ))
   )

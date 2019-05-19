@@ -16,14 +16,6 @@ loc2 = data.frame(locations[!duplicated(locations[,"cluster"]),][,])
 
 shinyServer(function(input, output) {
   
-  # output$ClusterPred == renderText ({
-  #   Userpred = preds %>%
-  #     filter(date ==input$dateInput) %>%
-  #     filter(hour == input$hourInput) %>%
-  #     filter(cluster == input$clusterInput)
-  #   print(Userpred$FreeSpotsCluster)
-  # })
-  
   output$plotPred = renderPlot ({
     data_plot_pred = shinyPredPlot %>%
       filter(date == input$dateInput) %>%
@@ -123,5 +115,12 @@ shinyServer(function(input, output) {
             legend.position = "none")
 
   })
-
+  output$ClusterPred <- renderText({
+    Userpred = preds %>%
+        filter(date ==input$dateInput) %>%
+        filter(hour == input$hourInput) %>%
+        filter(cluster == input$clusterInput)
+    
+    paste0("The number of free Parking spaces is: ", round(Userpred$FreeSpotsCluster,0))
+  })
 })
