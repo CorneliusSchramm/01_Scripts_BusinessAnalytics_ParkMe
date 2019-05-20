@@ -1,8 +1,13 @@
 library(shiny)
+library(rsconnect)
 
-# Load the previousely saved merged version of our parking data
-load("../02_Business_Analytics_Data/df_set_02_merged.RData")
+#Get map of Seattle via the Google API
+register_google(key="AIzaSyAfPULmtU7hUcoj4lboRAbzVg-810wrkJs") # Für Seattle map
+load("../02_Business_Analytics_Data/df_set_02_merged.RData") # Für history plot
+load("../02_Business_Analytics_Data/locationsToPlot.RData") # Für Blubberblasenplot
+load("../02_Business_Analytics_Data/4SHINY.RData") # Für Preds und Preds plot
 
+loc2 = data.frame(locations[!duplicated(locations[,"cluster"]),][,])
 parkcols=colnames(DF_merged)
 
 shinyUI(fluidPage(
@@ -33,10 +38,11 @@ shinyUI(fluidPage(
                                      sliderInput("hourInput",
                                                  "Which hour?",
                                                  min=9, max=17,
-                                                 value=8)
+                                                 value=8, animate = T)
                                    ),
                                    mainPanel(
-                                     textOutput("ClusterPred"),
+                                     h3(textOutput("ClusterPred")),
+                                     br(),
                                      plotOutput("plotPred", width = "100%",  height = "900px")
                                    )
                                  ))

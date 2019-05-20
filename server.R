@@ -5,6 +5,7 @@ library(data.table)
 library(tidyr)
 library(ggplot2)
 library(ggmap)
+library(rsconnect)
 
 #Get map of Seattle via the Google API
 register_google(key="AIzaSyAfPULmtU7hUcoj4lboRAbzVg-810wrkJs") # Für Seattle map
@@ -94,7 +95,8 @@ shinyServer(function(input, output) {
                  mapping=aes(x=lon,
                              y=lat,
                              color=cluster),
-                 size= 3) +
+                 size= 3,
+                 alpha= 0.4) +
       geom_point(data=loc2, alpha=.3,
                  mapping=aes(x=lon.center,
                              y=lat.center,
@@ -124,3 +126,25 @@ shinyServer(function(input, output) {
     paste0("The number of free Parking spaces is: ", round(Userpred$FreeSpotsCluster,0))
   })
 })
+
+# ipak <- function(pkg){
+#   
+#   new.pkg <- pkg[!(pkg %in% installed.packages()[, "Package"])]
+#   
+#   if (length(new.pkg)) 
+#     
+#     install.packages(new.pkg, dependencies = TRUE)
+#   
+#   sapply(pkg, require, character.only = TRUE)
+#   
+# }
+# 
+# 
+# 
+# # usage
+# ipak(myList)
+# 
+# 
+# myList = c("MatrixModels","SparseM","SpatioTemporal","abind","car","carData","intervals","lme4","maptools","lme4", "maptools")
+# #myList = c("MatrixModels","SparseM","SpatioTemporal","abind","car","carData","intervals","lme4","maptools","lme4", "maptools")
+# 
