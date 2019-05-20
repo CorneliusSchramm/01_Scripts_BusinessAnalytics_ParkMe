@@ -27,12 +27,11 @@ load("../Schramm, Cornelius - 02_Business_Analytics_Data/shinyPredsDF.RData")
 # load("../Schramm, Cornelius - 02_Business_Analytics_Data/df_set_02_merged.RData")
 load("../Schramm, Cornelius - 02_Business_Analytics_Data/pm_kmClust_relation.RData")
 
-# Data_plot (locations modified)
-# SEK  lon   lat    freePerc
-                  # FreeSpots von Cluster / PSC CLuster
 
-start = as.POSIXct("2019-04-22 08:00:00") # FOR ONE WEEK !!!!
-end = as.POSIXct("2019-04-27 21:00:00 ")
+# ------
+
+start = as.POSIXct("2019-04-16 08:00:00")
+end = as.POSIXct("2019-04-22 17:00:00 ")
 datetime = as.data.table(seq(from = start,
                             by = "hour",
                             to = end))
@@ -44,7 +43,20 @@ datetime = separate(datetime,"hour", c("hour",NA), sep=":")
 datetime$hour = as.numeric(datetime$hour)
 datetime = datetime %>%
   filter(hour<=17 & hour>= 8)
+datetime$weekdays = weekdays(datetime$datetime)
+datetime = filter(datetime, weekdays != "Sonntag")
+datetime = datetime[,-3]
 
+load("../Schramm, Cornelius - 02_Business_Analytics_Data/results_glm.RData")
+load("../Schramm, Cornelius - 02_Business_Analytics_Data/results_ts.RData")
+load("../Schramm, Cornelius - 02_Business_Analytics_Data/results_rf.RData")
+load("../Schramm, Cornelius - 02_Business_Analytics_Data/best_model.RData")
+best_model = as.data.frame(best_model)
+rf_cluster = c(which(best_model$best_model == "RF" ))+1
+glm_cluster = c(which(best_model$best_model == "GLM" ))+1
+ts_cluster = c(which(best_model$best_model == "TS" ))+1
+
+preds = data.frame(DF_RF$datetime, DF_RF[,rf_cluster],DF_RF[,glm_cluster],DF_RF[,ts_cluster])
 
 # Clusterpreds   an datetime                                                                                  // datetime
 # Wir brauchen die predictins aus dem dataanalysis file für alle 30 cluster für die ganze Woche  // clustpred (abs) datetime cluster PSCClust
@@ -52,29 +64,40 @@ datetime = datetime %>%
 # dann mergen der beiden obigen über cluster mergen // datetime SEK psc lon lat cluster clustpred (abs) PSCCluster
 # dann free percent pro cluster = pro SEK schaffen  // datetime SEK psc lon lat cluster clustpred (abs) PSCCluster FreePercClust FreeSpotsSEK
 
+preds = gather(preds, key= cluster, value = FreeSpotsCluster, 2:31)
 
+preds$cluster = gsub("X", "", preds$cluster)
+preds$cluster = as.numeric(preds$cluster)
+colnames(preds)[1] = "datetime"
+preds <- preds[order(preds$cluster,preds$datetime),]
+row.names(preds) = NULL
 
-shinyPredsDF = as.data.frame(shinyPredsDF[,-2])
-shinyPredsDF[,2:30] = shinyPredsDF$x
-colnames(shinyPredsDF)= c(seq(1,30,1))
-preds = as.data.frame(cbind(datetime,shinyPredsDF))
-preds = gather(preds, key= cluster, value = FreeSpotsCluster, 3:32)
-
+load("../Schramm, Cornelius - 02_Business_Analytics_Data/clustCap.RData")
+preds = merge(preds, aggregated_df, by = "cluster")
+preds$clustFreePerc = preds[,3]/preds[,4]
 
 #reference DF
 referenceDF = data.frame(DF_clustered_slim[!duplicated(DF_clustered_slim[,"SourceElementKey"]),][,c(1:2,5)])
 
-# Getting lon lat
-locations = data.frame(DF_merged[!duplicated(DF_merged[,"SourceElementKey"]),][,c(1:3)])
+temp = merge(preds[,c(1,2,5)], referenceDF, by="cluster")
+nrow(filter(temp, datetime == "2019-04-16 08:00:00"))
 
-referenceDF = referenceDF %>%
-  left_join(locations, by = "SourceElementKey")
+load("../Schramm, Cornelius - 02_Business_Analytics_Data/locations.RData")
+shinyPredPlot = merge(temp, locations[,2:4], by="SourceElementKey")
+shinyPredPlot$pmFreeSpots = shinyPredPlot$clustFreePerc * shinyPredPlot$ParkingSpaceCount
 
-# 
-preds = merge(preds, referenceDF, by = "cluster", all.x = T, all.y = F)
+# Create hour column
+preds = separate(preds, datetime, into = c("date", "hour"), sep=" ")
+preds = separate(preds, hour, into = c("hour", NA, NA), sep=":")
+preds$hour = as.numeric(preds$hour)
+preds$date = as.Date(preds$date)
 
-load("../Schramm, Cornelius - 02_Business_Analytics_Data/df_set_03_kmeanCluster.RData")
-load("../02_Business_Analytics_Data/df_set_03_kmeanCluster.RData")
-clustcap = DF_KMclust[,c(1,5)]
+shinyPredPlot = separate(shinyPredPlot, datetime, into = c("date", "hour"), sep=" ")
+shinyPredPlot = separate(shinyPredPlot, hour, into = c("hour", NA, NA), sep=":")
+shinyPredPlot$hour = as.numeric(shinyPredPlot$hour)
+shinyPredPlot$date = as.Date(shinyPredPlot$date)
 
-merge(preds, clustcap, by="cluster")
+# Save -----
+
+rm(list=setdiff(ls(), list("shinyPredPlot","preds")))
+save.image("../Schramm, Cornelius - 02_Business_Analytics_Data/4SHINY.RData")
