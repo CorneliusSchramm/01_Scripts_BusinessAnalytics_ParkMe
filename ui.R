@@ -1,6 +1,6 @@
 library(shiny)
 library(rsconnect)
-
+library(ggmap)
 #Get map of Seattle via the Google API
 register_google(key="AIzaSyAfPULmtU7hUcoj4lboRAbzVg-810wrkJs") # Für Seattle map
 load("../02_Business_Analytics_Data/df_set_02_merged.RData") # Für history plot
